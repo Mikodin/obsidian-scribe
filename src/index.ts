@@ -259,8 +259,11 @@ export default class ScribePlugin extends Plugin {
     const llmSummary = await this.handleTranscriptSummary(transcript);
     await addSummaryToNote(this, note, llmSummary);
 
-    const llmFileName = `scribe-${moment().format('YYYY-MM-DD')}-${normalizePath(llmSummary.title)}`;
-    await renameFile(this, note, llmFileName);
+    const shouldRenameNote = !isAppendToActiveFile;
+    if (shouldRenameNote) {
+      const llmFileName = `scribe-${moment().format('YYYY-MM-DD')}-${normalizePath(llmSummary.title)}`;
+      await renameFile(this, note, llmFileName);
+    }
   }
 
   async handleTranscription(audioBuffer: ArrayBuffer) {

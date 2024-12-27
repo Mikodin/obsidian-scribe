@@ -1,36 +1,36 @@
 {
-  "name": "obsidian-scribe-plugin",
-  "version": "1.0.0",
-  "description": "An Obsidian plugin for recording voice notes, transcribing the audio, and summarizing the text - All in one",
-  "main": "build/main.js",
-  "scripts": {
-    "dev": "node esbuild.config.mjs",
-    "build:prod": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "version": "node version-bump.mjs && git add manifest.json versions.json"
-  },
-  "keywords": [],
-  "author": "Mike Alicea",
-  "license": "MIT",
-  "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@types/node": "^16.11.6",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "builtin-modules": "3.3.0",
-    "dotenv": "^16.4.5",
-    "esbuild": "0.17.3",
-    "obsidian": "latest",
-    "tslib": "2.4.0",
-    "typescript": "4.7.4"
-  },
-  "dependencies": {
-    "@langchain/core": "^0.3.14",
-    "@langchain/openai": "^0.3.11",
-    "assemblyai": "^4.8.0",
-    "langchain": "^0.3.3",
-    "openai": "^4.68.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "zod": "^3.23.8"
-  }
+	"name": "obsidian-scribe-plugin",
+	"version": "1.0.4",
+	"description": "An Obsidian plugin for recording voice notes, transcribing the audio, and summarizing the text - All in one",
+	"main": "build/main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build:prod": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
+	},
+	"keywords": [],
+	"author": "Mike Alicea",
+	"license": "MIT",
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/node": "^16.11.6",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"builtin-modules": "3.3.0",
+		"dotenv": "^16.4.5",
+		"esbuild": "0.17.3",
+		"obsidian": "latest",
+		"tslib": "2.4.0",
+		"typescript": "4.7.4"
+	},
+	"dependencies": {
+		"@langchain/core": "^0.3.14",
+		"@langchain/openai": "^0.3.11",
+		"assemblyai": "^4.8.0",
+		"langchain": "^0.3.3",
+		"openai": "^4.68.3",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"zod": "^3.23.8"
+	}
 }
