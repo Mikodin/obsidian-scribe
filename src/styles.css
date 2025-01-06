@@ -144,3 +144,14 @@ If your plugin does not need CSS, delete this file.
   align-items: center;
   justify-content: space-between;
 }
+
+.scribe-recording-options {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  label {
+    margin-bottom: .5em;
+  }
+}

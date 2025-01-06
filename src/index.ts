@@ -121,7 +121,10 @@ export default class ScribePlugin extends Plugin {
     }
   }
 
-  async scribe(isAppendToActiveFile?: boolean) {
+  async scribe(
+    isAppendToActiveFile?: boolean,
+    isOnlyTranscribeActive?: boolean,
+  ) {
     try {
       const baseFileName = createBaseFileName();
 
@@ -133,6 +136,7 @@ export default class ScribePlugin extends Plugin {
         audioRecordingFile: recordingFile,
         audioRecordingBuffer: recordingBuffer,
         isAppendToActiveFile,
+        isOnlyTranscribeActive,
       });
     } catch (error) {
       new Notice(`Scribe: Something went wrong ${error.toString()}`);
@@ -226,11 +230,13 @@ export default class ScribePlugin extends Plugin {
     audioRecordingFile,
     audioRecordingBuffer,
     isAppendToActiveFile,
+    isOnlyTranscribeActive,
   }: {
     baseNoteAndAudioFileName: string;
     audioRecordingFile: TFile;
     audioRecordingBuffer: ArrayBuffer;
     isAppendToActiveFile?: boolean;
+    isOnlyTranscribeActive?: boolean;
   }) {
     const scribeNoteFilename = `scribe-${baseNoteAndAudioFileName}`;
 
@@ -254,7 +260,11 @@ export default class ScribePlugin extends Plugin {
     this.app.workspace.openLinkText(note?.path, currentPath, true);
 
     const transcript = await this.handleTranscription(audioRecordingBuffer);
-    await addTranscriptToNote(this, note, transcript);
+    await addTranscriptToNote(this, note, transcript, isOnlyTranscribeActive);
+
+    if (isOnlyTranscribeActive) {
+      return;
+    }
 
     const llmSummary = await this.handleTranscriptSummary(transcript);
     await addSummaryToNote(this, note, llmSummary);

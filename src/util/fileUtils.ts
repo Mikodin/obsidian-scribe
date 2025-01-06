@@ -90,9 +90,12 @@ export async function addTranscriptToNote(
   plugin: ScribePlugin,
   noteFile: TFile,
   transcript: string,
+  isOnlyTranscribeActive?: boolean,
 ) {
   try {
-    const textToAdd = `${transcript}
+    const textToAdd = isOnlyTranscribeActive
+      ? `${transcript}`
+      : `${transcript}
 ${SUMMARY_IN_PROGRESS_HEADER}`;
 
     await plugin.app.vault.process(noteFile, (data) => {

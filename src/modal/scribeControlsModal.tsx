@@ -54,6 +54,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     number | null
   >(null);
   const [isAppendToActiveFile, setIsAppendToActiveFile] = useState(false);
+  const [isOnlyTranscribeActive, setIsOnlyTranscribeActive] = useState(false);
 
   const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);
 
@@ -84,7 +85,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     setIsScribing(true);
     setRecordingStartTimeMs(null);
     setRecordingState('inactive');
-    await plugin.scribe(isAppendToActiveFile);
+    await plugin.scribe(isAppendToActiveFile, isOnlyTranscribeActive);
     setIsPaused(false);
     setIsActive(false);
     setIsScribing(false);
@@ -141,6 +142,8 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
         <ModalRecordingOptions
           isAppendToActiveFile={isAppendToActiveFile}
           setIsAppendToActiveFile={setIsAppendToActiveFile}
+          isOnlyTranscribeActive={isOnlyTranscribeActive}
+          setIsOnlyTranscribeActive={setIsOnlyTranscribeActive}
         />
       </div>
 
