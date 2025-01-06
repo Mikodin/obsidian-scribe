@@ -126,7 +126,7 @@ export default class ScribePlugin extends Plugin {
     }
   }
 
-  async scribe(scribeOptions: ScribeOptions) {
+  async scribe(scribeOptions: ScribeOptions = {}) {
     try {
       const baseFileName = createBaseFileName();
 
