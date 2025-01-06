@@ -1,6 +1,7 @@
 import { createRoot, type Root } from 'react-dom/client';
 import { Modal } from 'obsidian';
 import type ScribePlugin from 'src';
+import type { ScribeOptions } from 'src';
 import { useState } from 'react';
 import { ModalSettings } from './components/ModalSettings';
 import { ModalRecordingTimer } from './components/ModalRecordingTimer';
@@ -53,8 +54,12 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   const [recordingStartTimeMs, setRecordingStartTimeMs] = useState<
     number | null
   >(null);
-  const [isAppendToActiveFile, setIsAppendToActiveFile] = useState(false);
-  const [isOnlyTranscribeActive, setIsOnlyTranscribeActive] = useState(false);
+  const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
+    isAppendToActiveFile: false,
+    isOnlyTranscribeActive: false,
+  });
+
+  const { isAppendToActiveFile, isOnlyTranscribeActive } = scribeOptions;
 
   const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);
 
@@ -85,7 +90,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     setIsScribing(true);
     setRecordingStartTimeMs(null);
     setRecordingState('inactive');
-    await plugin.scribe(isAppendToActiveFile, isOnlyTranscribeActive);
+    await plugin.scribe({ isAppendToActiveFile, isOnlyTranscribeActive });
     setIsPaused(false);
     setIsActive(false);
     setIsScribing(false);
@@ -140,10 +145,8 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
           Settings
         </button>
         <ModalRecordingOptions
-          isAppendToActiveFile={isAppendToActiveFile}
-          setIsAppendToActiveFile={setIsAppendToActiveFile}
-          isOnlyTranscribeActive={isOnlyTranscribeActive}
-          setIsOnlyTranscribeActive={setIsOnlyTranscribeActive}
+          options={scribeOptions}
+          setOptions={setScribeOptions}
         />
       </div>
 

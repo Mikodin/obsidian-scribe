@@ -46,6 +46,11 @@ const DEFAULT_STATE: ScribeState = {
   openAiClient: null,
 };
 
+export interface ScribeOptions {
+  isAppendToActiveFile?: boolean;
+  isOnlyTranscribeActive?: boolean;
+}
+
 export default class ScribePlugin extends Plugin {
   settings: ScribePluginSettings = DEFAULT_SETTINGS;
   state: ScribeState = DEFAULT_STATE;
@@ -121,10 +126,7 @@ export default class ScribePlugin extends Plugin {
     }
   }
 
-  async scribe(
-    isAppendToActiveFile?: boolean,
-    isOnlyTranscribeActive?: boolean,
-  ) {
+  async scribe(scribeOptions: ScribeOptions) {
     try {
       const baseFileName = createBaseFileName();
 
@@ -135,8 +137,7 @@ export default class ScribePlugin extends Plugin {
         baseNoteAndAudioFileName: baseFileName,
         audioRecordingFile: recordingFile,
         audioRecordingBuffer: recordingBuffer,
-        isAppendToActiveFile,
-        isOnlyTranscribeActive,
+        scribeOptions: scribeOptions,
       });
     } catch (error) {
       new Notice(`Scribe: Something went wrong ${error.toString()}`);
@@ -229,15 +230,14 @@ export default class ScribePlugin extends Plugin {
     baseNoteAndAudioFileName,
     audioRecordingFile,
     audioRecordingBuffer,
-    isAppendToActiveFile,
-    isOnlyTranscribeActive,
+    scribeOptions = {},
   }: {
     baseNoteAndAudioFileName: string;
     audioRecordingFile: TFile;
     audioRecordingBuffer: ArrayBuffer;
-    isAppendToActiveFile?: boolean;
-    isOnlyTranscribeActive?: boolean;
+    scribeOptions?: ScribeOptions;
   }) {
+    const { isAppendToActiveFile, isOnlyTranscribeActive } = scribeOptions;
     const scribeNoteFilename = `scribe-${baseNoteAndAudioFileName}`;
 
     let note = isAppendToActiveFile
