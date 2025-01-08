@@ -154,7 +154,7 @@ export default class ScribePlugin extends Plugin {
           `audio/${audioFile.extension}` as SupportedMimeType,
         )
       ) {
-        new Notice('Scribe: ⚠️ This file type is not supported');
+        new Notice('Scribe: ⚠️ This file type is not supported.');
         return;
       }
       const baseFileName = createBaseFileName();

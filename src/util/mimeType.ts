@@ -7,6 +7,9 @@ const supportedMimeTypes = [
   'audio/ogg',
   'audio/mp4',
   'audio/mp3',
+  'audio/m4a',
+  'audio/wav',
+  'audio/flac',
 ] as const;
 
 export type SupportedMimeType = (typeof supportedMimeTypes)[number];
@@ -17,6 +20,9 @@ const _mimeTypeToFileExtension: Record<SupportedMimeType, string> = {
   'audio/ogg': 'ogg',
   'audio/mp4': 'mp4',
   'audio/mp3': 'mp3',
+  'audio/m4a': 'm4a',
+  'audio/wav': 'wav',
+  'audio/flac': 'flac',
 };
 
 export function pickMimeType(preferred: SupportedMimeType) {
