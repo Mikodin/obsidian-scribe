@@ -12,8 +12,7 @@ import { getDefaultPathSettings } from './util/pathUtils';
 import { AudioRecord } from './audioRecord/audioRecord';
 import {
   addAudioSourceToFrontmatter,
-  addSummaryToNote,
-  addTranscriptToNote,
+  appendTextToNote,
   createBaseFileName,
   createNewNote,
   renameFile,
@@ -259,15 +258,42 @@ export default class ScribePlugin extends Plugin {
     const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
     this.app.workspace.openLinkText(note?.path, currentPath, true);
 
+    await appendTextToNote(this, note, '# Transcript in progress');
+
     const transcript = await this.handleTranscription(audioRecordingBuffer);
-    await addTranscriptToNote(this, note, transcript, isOnlyTranscribeActive);
+
+    const inProgressHeaderToReplace = isAppendToActiveFile
+      ? '# Transcript in progress'
+      : '\n# Transcript in progress';
+
+    await appendTextToNote(
+      this,
+      note,
+      `# Transcript\n![[${audioRecordingFile.path}]]\n${transcript}`,
+      inProgressHeaderToReplace,
+    );
 
     if (isOnlyTranscribeActive) {
       return;
     }
 
     const llmSummary = await this.handleTranscriptSummary(transcript);
-    await addSummaryToNote(this, note, llmSummary);
+    await appendTextToNote(this, note, `## Summary\n${llmSummary.summary}`);
+    await appendTextToNote(this, note, `## Insights\n${llmSummary.insights}`);
+
+    if (llmSummary.answeredQuestions) {
+      await appendTextToNote(
+        this,
+        note,
+        `## Answered Questions\n${llmSummary.answeredQuestions}`,
+      );
+    }
+
+    await appendTextToNote(
+      this,
+      note,
+      `## Mermaid Chart\n\`\`\`mermaid\n${llmSummary.mermaidChart}\n\`\`\``,
+    );
 
     const shouldRenameNote = !isAppendToActiveFile;
     if (shouldRenameNote) {

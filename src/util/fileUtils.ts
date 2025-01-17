@@ -58,15 +58,6 @@ export async function addAudioSourceToFrontmatter(
   audioFile: TFile,
 ) {
   try {
-    const noteContent = `${TRANSCRIPT_IN_PROGRESS_HEADER}\n![[${audioFile.path}]]`;
-
-    await plugin.app.vault.process(noteFile, (data) => {
-      if (data.length) {
-        return `${data}\n${noteContent}`;
-      }
-      return noteContent;
-    });
-
     await plugin.app.fileManager.processFrontMatter(noteFile, (frontMatter) => {
       const newFrontMatter = {
         ...frontMatter,
@@ -84,58 +75,25 @@ export async function addAudioSourceToFrontmatter(
   }
 }
 
-const SUMMARY_IN_PROGRESS_HEADER = '# Summary In Progress';
-const TRANSCRIPT_HEADER = '# Transcript';
-export async function addTranscriptToNote(
+export async function appendTextToNote(
   plugin: ScribePlugin,
   noteFile: TFile,
-  transcript: string,
-  isOnlyTranscribeActive?: boolean,
+  text: string,
+  textToReplace?: string,
 ) {
   try {
-    const textToAdd = isOnlyTranscribeActive
-      ? `${transcript}`
-      : `${transcript}
-${SUMMARY_IN_PROGRESS_HEADER}`;
-
     await plugin.app.vault.process(noteFile, (data) => {
-      const newData = data.replace(
-        TRANSCRIPT_IN_PROGRESS_HEADER,
-        TRANSCRIPT_HEADER,
-      );
-      return `${newData}\n${textToAdd}`;
-    });
+      try {
+        if (textToReplace) {
+          return data.replace(textToReplace, text);
+        }
+      } catch (error) {
+        console.error('Failed to replace text', error);
+        // Append anyway
+        return `${data}\n${text}`;
+      }
 
-    return noteFile;
-  } catch (error) {
-    console.error('Failed to addAudioSourceToFrontmatter', error);
-    throw error;
-  }
-}
-
-const SUMMARY_HEADER = '## Summary';
-const INSIGHTS_HEADER = '## Insights';
-const MERMAID_CHART_HEADER = '## Mermaid Chart';
-const ANSWERED_QUESTIONS_HEADER = '## Answers from Scribe';
-export async function addSummaryToNote(
-  plugin: ScribePlugin,
-  noteFile: TFile,
-  llmSummary: LLMSummary,
-) {
-  const { summary, insights, mermaidChart, answeredQuestions } = llmSummary;
-  try {
-    const textToAdd = `${SUMMARY_HEADER}
-${summary}
-${INSIGHTS_HEADER}
-${insights}
-${answeredQuestions ? `${ANSWERED_QUESTIONS_HEADER}\n${answeredQuestions}` : ''}
-${MERMAID_CHART_HEADER}
-\`\`\`mermaid
-${mermaidChart}
-\`\`\``;
-
-    await plugin.app.vault.process(noteFile, (data) => {
-      return data.replace(SUMMARY_IN_PROGRESS_HEADER, textToAdd);
+      return `${data.length && `${data}\n`}${text}`;
     });
 
     return noteFile;
