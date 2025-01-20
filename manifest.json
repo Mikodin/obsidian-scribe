@@ -1,11 +1,11 @@
 {
-	"id": "scribe",
-	"name": "Scribe",
-	"version": "1.0.7",
-	"minAppVersion": "0.15.0",
-	"description": "Record voice notes, Fill in lost thoughts, Transcribe the audio, Summarize & Visualize the text - All in one clip",
-	"author": "Mike Alicea",
-	"authorUrl": "https://github.com/Mikodin/",
-	"fundingUrl": "https://buymeacoffee.com/mikealicea",
-	"isDesktopOnly": false
+  "id": "scribe",
+  "name": "Scribe",
+  "version": "1.0.7",
+  "minAppVersion": "0.15.0",
+  "description": "Record voice notes, Fill in lost thoughts, Transcribe the audio, Summarize & Visualize the text - All in one clip",
+  "author": "Mike Alicea",
+  "authorUrl": "https://github.com/Mikodin/",
+  "fundingUrl": "https://buymeacoffee.com/mikealicea",
+  "isDesktopOnly": false
 }
