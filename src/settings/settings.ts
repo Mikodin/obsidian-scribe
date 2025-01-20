@@ -47,7 +47,6 @@ export class ScribeSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		this.plugin.loadSettings();
-		console.log(this.plugin.settings);
 
 		new Setting(containerEl)
 			.setName("Open AI API key")
@@ -150,6 +149,36 @@ export class ScribeSettingsTab extends PluginSettingTab {
 			});
 
 		containerEl.createEl("h2", { text: "File name properties" });
+		containerEl.createEl("sub", {
+			text: "These settings must be saved via the button",
+		});
+		new Setting(containerEl).addButton((button) => {
+			button.setButtonText("Save settings");
+			button.onClick(async () => {
+				if (!this.plugin.settings.noteFilenamePrefix) {
+					new Notice(
+						"⚠️ You must provide a note filename prefix, setting to default"
+					);
+					this.plugin.settings.noteFilenamePrefix =
+						DEFAULT_SETTINGS.noteFilenamePrefix;
+				}
+				if (
+					this.plugin.settings.noteFilenamePrefix.includes(
+						"{{date}}"
+					) &&
+					!this.plugin.settings.dateFilenameFormat
+				) {
+					new Notice(
+						"⚠️ You must provide a date format, setting to default"
+					);
+					this.plugin.settings.dateFilenameFormat =
+						DEFAULT_SETTINGS.dateFilenameFormat;
+				}
+
+				this.saveSettings();
+				this.display();
+			});
+		});
 
 		let isDateInPrefix: boolean =
 			this.plugin.settings.noteFilenamePrefix.includes("{{date}}");
@@ -163,7 +192,6 @@ export class ScribeSettingsTab extends PluginSettingTab {
 				text.setPlaceholder("scribe-");
 				text.onChange((value) => {
 					this.plugin.settings.noteFilenamePrefix = value;
-					this.plugin.saveSettings();
 					isDateInPrefix = value.includes("{{date}}");
 					dateInput.setDisabled(!isDateInPrefix);
 				});
@@ -188,7 +216,6 @@ export class ScribeSettingsTab extends PluginSettingTab {
 								this.plugin.settings.dateFilenameFormat
 							)}`
 						);
-						this.plugin.saveSettings();
 					} catch (error) {
 						console.error("Invalid date format", error);
 						new Notice(`Invalid date format: ${value}`);
@@ -197,5 +224,23 @@ export class ScribeSettingsTab extends PluginSettingTab {
 
 				text.setValue(this.plugin.settings.dateFilenameFormat);
 			});
+
+		new Setting(containerEl).addButton((button) => {
+			button.setButtonText("Reset to default");
+			button.onClick(async () => {
+				this.plugin.settings = {
+					...DEFAULT_SETTINGS,
+					openAiApiKey: this.plugin.settings.openAiApiKey,
+					assemblyAiApiKey: this.plugin.settings.assemblyAiApiKey,
+				};
+
+				this.display();
+			});
+		});
+	}
+
+	saveSettings() {
+		this.plugin.saveSettings();
+		new Notice("Scribe: ✅ Settings saved");
 	}
 }
