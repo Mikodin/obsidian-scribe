@@ -14,6 +14,7 @@ export interface ScribePluginSettings {
 	transcriptDirectory: string;
 	transcriptPlatform: TRANSCRIPT_PLATFORM;
 	llmModel: LLM_MODELS;
+	recordingFilenamePrefix: string;
 	noteFilenamePrefix: string;
 	dateFilenameFormat: string;
 }
@@ -25,7 +26,8 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
 	transcriptDirectory: "",
 	transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
 	llmModel: LLM_MODELS["gpt-4o"],
-	noteFilenamePrefix: "scribe-",
+	noteFilenamePrefix: "scribe-{{date}}-",
+	recordingFilenamePrefix: "scribe-recording-{{date}}-",
 	dateFilenameFormat: "YYYY-MM-DD",
 };
 
@@ -152,36 +154,10 @@ export class ScribeSettingsTab extends PluginSettingTab {
 		containerEl.createEl("sub", {
 			text: "These settings must be saved via the button",
 		});
-		new Setting(containerEl).addButton((button) => {
-			button.setButtonText("Save settings");
-			button.onClick(async () => {
-				if (!this.plugin.settings.noteFilenamePrefix) {
-					new Notice(
-						"⚠️ You must provide a note filename prefix, setting to default"
-					);
-					this.plugin.settings.noteFilenamePrefix =
-						DEFAULT_SETTINGS.noteFilenamePrefix;
-				}
-				if (
-					this.plugin.settings.noteFilenamePrefix.includes(
-						"{{date}}"
-					) &&
-					!this.plugin.settings.dateFilenameFormat
-				) {
-					new Notice(
-						"⚠️ You must provide a date format, setting to default"
-					);
-					this.plugin.settings.dateFilenameFormat =
-						DEFAULT_SETTINGS.dateFilenameFormat;
-				}
 
-				this.saveSettings();
-				this.display();
-			});
-		});
-
-		let isDateInPrefix: boolean =
-			this.plugin.settings.noteFilenamePrefix.includes("{{date}}");
+		const isDateInPrefix = () =>
+			this.plugin.settings.noteFilenamePrefix.includes("{{date}}") ||
+			this.plugin.settings.recordingFilenamePrefix.includes("{{date}}");
 
 		new Setting(containerEl)
 			.setName("Transcript filename prefix")
@@ -192,28 +168,44 @@ export class ScribeSettingsTab extends PluginSettingTab {
 				text.setPlaceholder("scribe-");
 				text.onChange((value) => {
 					this.plugin.settings.noteFilenamePrefix = value;
-					isDateInPrefix = value.includes("{{date}}");
-					dateInput.setDisabled(!isDateInPrefix);
+
+					dateInput.setDisabled(!isDateInPrefix());
 				});
 
 				text.setValue(this.plugin.settings.noteFilenamePrefix);
 			});
 
+		new Setting(containerEl)
+			.setName("Audio recording filename prefix")
+			.setDesc(
+				"This will be the prefix of the audio recording filename, use {{date}} to include the date"
+			)
+			.addText((text) => {
+				text.setPlaceholder("scribe-");
+				text.onChange((value) => {
+					this.plugin.settings.recordingFilenamePrefix = value;
+					dateInput.setDisabled(!isDateInPrefix());
+				});
+
+				text.setValue(this.plugin.settings.recordingFilenamePrefix);
+			});
+
 		const dateInput = new Setting(containerEl)
 			.setName("Date format")
 			.setDesc(
-				"This will only be used if {{date}} is in the prefix above."
+				"This will only be used if {{date}} is in the transcript or audio recording filename prefix above."
 			)
 			.addText((text) => {
-				text.setDisabled(!isDateInPrefix);
+				text.setDisabled(!isDateInPrefix());
 				text.setPlaceholder("YYYY-MM-DD");
 				text.onChange((value) => {
 					this.plugin.settings.dateFilenameFormat = value;
+					console.log(value);
 					try {
 						new Notice(
 							`📆 Format: ${formatFilenamePrefix(
-								this.plugin.settings.noteFilenamePrefix,
-								this.plugin.settings.dateFilenameFormat
+								"some-prefix-{{date}}",
+								value
 							)}`
 						);
 					} catch (error) {
@@ -234,6 +226,44 @@ export class ScribeSettingsTab extends PluginSettingTab {
 					assemblyAiApiKey: this.plugin.settings.assemblyAiApiKey,
 				};
 
+				this.saveSettings();
+				this.display();
+			});
+		});
+
+		new Setting(containerEl).addButton((button) => {
+			button.setButtonText("Save settings");
+			button.onClick(async () => {
+				if (!this.plugin.settings.noteFilenamePrefix) {
+					new Notice(
+						"⚠️ You must provide a note filename prefix, setting to default"
+					);
+					this.plugin.settings.noteFilenamePrefix =
+						DEFAULT_SETTINGS.noteFilenamePrefix;
+				}
+
+				if (!this.plugin.settings.recordingFilenamePrefix) {
+					new Notice(
+						"⚠️ You must provide a recording filename prefix, setting to default"
+					);
+					this.plugin.settings.recordingFilenamePrefix =
+						DEFAULT_SETTINGS.recordingFilenamePrefix;
+				}
+
+				if (
+					this.plugin.settings.noteFilenamePrefix.includes(
+						"{{date}}"
+					) &&
+					!this.plugin.settings.dateFilenameFormat
+				) {
+					new Notice(
+						"⚠️ You must provide a date format, setting to default"
+					);
+					this.plugin.settings.dateFilenameFormat =
+						DEFAULT_SETTINGS.dateFilenameFormat;
+				}
+
+				this.saveSettings();
 				this.display();
 			});
 		});
