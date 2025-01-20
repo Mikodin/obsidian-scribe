@@ -152,7 +152,7 @@ export class ScribeSettingsTab extends PluginSettingTab {
 
 		containerEl.createEl("h2", { text: "File name properties" });
 		containerEl.createEl("sub", {
-			text: "These settings must be saved via the button",
+			text: "These settings must be saved via the button for validation purposes",
 		});
 
 		const isDateInPrefix = () =>
@@ -218,20 +218,6 @@ export class ScribeSettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl).addButton((button) => {
-			button.setButtonText("Reset to default");
-			button.onClick(async () => {
-				this.plugin.settings = {
-					...DEFAULT_SETTINGS,
-					openAiApiKey: this.plugin.settings.openAiApiKey,
-					assemblyAiApiKey: this.plugin.settings.assemblyAiApiKey,
-				};
-
-				this.saveSettings();
-				this.display();
-			});
-		});
-
-		new Setting(containerEl).addButton((button) => {
 			button.setButtonText("Save settings");
 			button.onClick(async () => {
 				if (!this.plugin.settings.noteFilenamePrefix) {
@@ -262,6 +248,24 @@ export class ScribeSettingsTab extends PluginSettingTab {
 					this.plugin.settings.dateFilenameFormat =
 						DEFAULT_SETTINGS.dateFilenameFormat;
 				}
+
+				this.saveSettings();
+				this.display();
+			});
+		});
+
+		containerEl.createEl("sub", {
+			text: "This functionality will improve in future versions",
+		});
+
+		new Setting(containerEl).addButton((button) => {
+			button.setButtonText("Reset to default");
+			button.onClick(async () => {
+				this.plugin.settings = {
+					...DEFAULT_SETTINGS,
+					openAiApiKey: this.plugin.settings.openAiApiKey,
+					assemblyAiApiKey: this.plugin.settings.assemblyAiApiKey,
+				};
 
 				this.saveSettings();
 				this.display();
