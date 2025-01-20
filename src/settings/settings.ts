@@ -79,11 +79,14 @@ export class ScribeSettingsTab extends PluginSettingTab {
 			.setName("Directory for recordings")
 			.setDesc("Defaults to your resources folder")
 			.addDropdown((component) => {
+				component.setValue(this.plugin.settings.recordingDirectory);
 				component.addOption("", "Vault folder");
 				for (const folder of foldersInVault) {
-					component.addOption(folder.path, folder.path);
+					const folderName = folder.path
+						? folder.path
+						: "Vault Folder";
+					component.addOption(folder.path, folderName);
 				}
-				component.setValue(this.plugin.settings.recordingDirectory);
 				component.onChange(async (value) => {
 					this.plugin.settings.recordingDirectory = value;
 					await this.plugin.saveSettings();
@@ -94,11 +97,13 @@ export class ScribeSettingsTab extends PluginSettingTab {
 			.setName("Directory for transcripts")
 			.setDesc("Defaults to your new note folder")
 			.addDropdown((component) => {
+				component.setValue(this.plugin.settings.transcriptDirectory);
 				component.addOption("", "Vault folder");
 				for (const folder of foldersInVault) {
-					component.addOption(folder.path, folder.path);
+					const folderName =
+						folder.path === "" ? "Vault Folder" : folder.path;
+					component.addOption(folder.path, folderName);
 				}
-				component.setValue(this.plugin.settings.transcriptDirectory);
 				component.onChange(async (value) => {
 					this.plugin.settings.transcriptDirectory = value;
 					await this.plugin.saveSettings();
@@ -109,10 +114,10 @@ export class ScribeSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("LLM model for creating the summary")
 			.addDropdown((component) => {
+				component.setValue(this.plugin.settings.llmModel);
 				for (const model of Object.keys(LLM_MODELS)) {
 					component.addOption(model, model);
 				}
-				component.setValue(this.plugin.settings.llmModel);
 				component.onChange(async (value: LLM_MODELS) => {
 					this.plugin.settings.llmModel = value;
 					await this.plugin.saveSettings();
@@ -124,10 +129,10 @@ export class ScribeSettingsTab extends PluginSettingTab {
 				"Transcript platform:  Your recording is uploaded to this service"
 			)
 			.addDropdown((component) => {
+				component.setValue(this.plugin.settings.transcriptPlatform);
 				for (const platform of Object.keys(TRANSCRIPT_PLATFORM)) {
 					component.addOption(platform, platform);
 				}
-				component.setValue(this.plugin.settings.transcriptPlatform);
 				component.onChange(async (value: TRANSCRIPT_PLATFORM) => {
 					this.plugin.settings.transcriptPlatform = value;
 					await this.plugin.saveSettings();
