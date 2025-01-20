@@ -95,7 +95,7 @@ export class ScribeSettingsTab extends PluginSettingTab {
 				}
 				component.onChange(async (value) => {
 					this.plugin.settings.recordingDirectory = value;
-					await this.plugin.saveSettings();
+					await this.saveSettings();
 				});
 
 				component.setValue(this.plugin.settings.recordingDirectory);
@@ -113,7 +113,7 @@ export class ScribeSettingsTab extends PluginSettingTab {
 				}
 				component.onChange(async (value) => {
 					this.plugin.settings.transcriptDirectory = value;
-					await this.plugin.saveSettings();
+					await this.saveSettings();
 				});
 
 				component.setValue(this.plugin.settings.transcriptDirectory);
