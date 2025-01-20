@@ -1,5 +1,6 @@
-import { type App, PluginSettingTab, Setting } from "obsidian";
+import { type App, Notice, PluginSettingTab, Setting, moment } from "obsidian";
 import type ScribePlugin from "src";
+import { formatFilenamePrefix } from "src/util/filenameUtils";
 import { LLM_MODELS } from "src/util/openAiUtils";
 
 export enum TRANSCRIPT_PLATFORM {
@@ -14,6 +15,7 @@ export interface ScribePluginSettings {
 	transcriptPlatform: TRANSCRIPT_PLATFORM;
 	llmModel: LLM_MODELS;
 	noteFilenamePrefix: string;
+	dateFilenameFormat: string;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -24,6 +26,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
 	transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
 	llmModel: LLM_MODELS["gpt-4o"],
 	noteFilenamePrefix: "scribe-",
+	dateFilenameFormat: "YYYY-MM-DD",
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -42,6 +45,9 @@ export class ScribeSettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
+
+		this.plugin.loadSettings();
+		console.log(this.plugin.settings);
 
 		new Setting(containerEl)
 			.setName("Open AI API key")
@@ -79,7 +85,6 @@ export class ScribeSettingsTab extends PluginSettingTab {
 			.setName("Directory for recordings")
 			.setDesc("Defaults to your resources folder")
 			.addDropdown((component) => {
-				component.setValue(this.plugin.settings.recordingDirectory);
 				component.addOption("", "Vault folder");
 				for (const folder of foldersInVault) {
 					const folderName = folder.path
@@ -91,13 +96,14 @@ export class ScribeSettingsTab extends PluginSettingTab {
 					this.plugin.settings.recordingDirectory = value;
 					await this.plugin.saveSettings();
 				});
+
+				component.setValue(this.plugin.settings.recordingDirectory);
 			});
 
 		new Setting(containerEl)
 			.setName("Directory for transcripts")
 			.setDesc("Defaults to your new note folder")
 			.addDropdown((component) => {
-				component.setValue(this.plugin.settings.transcriptDirectory);
 				component.addOption("", "Vault folder");
 				for (const folder of foldersInVault) {
 					const folderName =
@@ -108,13 +114,14 @@ export class ScribeSettingsTab extends PluginSettingTab {
 					this.plugin.settings.transcriptDirectory = value;
 					await this.plugin.saveSettings();
 				});
+
+				component.setValue(this.plugin.settings.transcriptDirectory);
 			});
 
 		containerEl.createEl("h2", { text: "AI model options" });
 		new Setting(containerEl)
 			.setName("LLM model for creating the summary")
 			.addDropdown((component) => {
-				component.setValue(this.plugin.settings.llmModel);
 				for (const model of Object.keys(LLM_MODELS)) {
 					component.addOption(model, model);
 				}
@@ -122,6 +129,8 @@ export class ScribeSettingsTab extends PluginSettingTab {
 					this.plugin.settings.llmModel = value;
 					await this.plugin.saveSettings();
 				});
+
+				component.setValue(this.plugin.settings.llmModel);
 			});
 
 		new Setting(containerEl)
@@ -129,7 +138,6 @@ export class ScribeSettingsTab extends PluginSettingTab {
 				"Transcript platform:  Your recording is uploaded to this service"
 			)
 			.addDropdown((component) => {
-				component.setValue(this.plugin.settings.transcriptPlatform);
 				for (const platform of Object.keys(TRANSCRIPT_PLATFORM)) {
 					component.addOption(platform, platform);
 				}
@@ -137,18 +145,57 @@ export class ScribeSettingsTab extends PluginSettingTab {
 					this.plugin.settings.transcriptPlatform = value;
 					await this.plugin.saveSettings();
 				});
+
+				component.setValue(this.plugin.settings.transcriptPlatform);
 			});
 
 		containerEl.createEl("h2", { text: "File name properties" });
+
+		let isDateInPrefix: boolean =
+			this.plugin.settings.noteFilenamePrefix.includes("{{date}}");
+
 		new Setting(containerEl)
 			.setName("Transcript filename prefix")
+			.setDesc(
+				"This will be the prefix of the note filename, use {{date}} to include the date"
+			)
 			.addText((text) => {
 				text.setPlaceholder("scribe-");
-				text.setValue(this.plugin.settings.noteFilenamePrefix);
 				text.onChange((value) => {
 					this.plugin.settings.noteFilenamePrefix = value;
 					this.plugin.saveSettings();
+					isDateInPrefix = value.includes("{{date}}");
+					dateInput.setDisabled(!isDateInPrefix);
 				});
+
+				text.setValue(this.plugin.settings.noteFilenamePrefix);
+			});
+
+		const dateInput = new Setting(containerEl)
+			.setName("Date format")
+			.setDesc(
+				"This will only be used if {{date}} is in the prefix above."
+			)
+			.addText((text) => {
+				text.setDisabled(!isDateInPrefix);
+				text.setPlaceholder("YYYY-MM-DD");
+				text.onChange((value) => {
+					this.plugin.settings.dateFilenameFormat = value;
+					try {
+						new Notice(
+							`📆 Format: ${formatFilenamePrefix(
+								this.plugin.settings.noteFilenamePrefix,
+								this.plugin.settings.dateFilenameFormat
+							)}`
+						);
+						this.plugin.saveSettings();
+					} catch (error) {
+						console.error("Invalid date format", error);
+						new Notice(`Invalid date format: ${value}`);
+					}
+				});
+
+				text.setValue(this.plugin.settings.dateFilenameFormat);
 			});
 	}
 }
