@@ -14,7 +14,6 @@ import {
 	addAudioSourceToFrontmatter,
 	addSummaryToNote,
 	addTranscriptToNote,
-	createBaseFileName,
 	createNewNote,
 	renameFile,
 	saveAudioRecording,
@@ -129,7 +128,10 @@ export default class ScribePlugin extends Plugin {
 
 	async scribe(scribeOptions: ScribeOptions = {}) {
 		try {
-			const baseFileName = createBaseFileName();
+			const baseFileName = formatFilenamePrefix(
+				this.settings.recordingFilenamePrefix,
+				this.settings.dateFilenameFormat
+			);
 
 			const { recordingBuffer, recordingFile } =
 				await this.handleStopAndSaveRecording(baseFileName);
