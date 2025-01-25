@@ -77,7 +77,9 @@ export class AudioRecord {
       this.mediaRecorder.onstop = () => {
         this.mediaRecorder?.stream.getTracks().forEach((track) => track.stop()); // stop the stream tracks
 
-        const blob = new Blob(this.data, { type: this.mimeType });
+        const blob = new Blob(this.data, {
+          type: this.mimeType,
+        });
 
         this.data = [];
         this.mediaRecorder = null;
