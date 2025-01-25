@@ -7,20 +7,18 @@ export function ModalRecordingOptions({
   options: ScribeOptions;
   setOptions: React.Dispatch<ScribeOptions>;
 }) {
-  const handleChangeIsAppendToActiveFile = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    // setIsAppendToActiveFile(event.target.checked);
-    setOptions({ ...options, isAppendToActiveFile: event.target.checked });
-  };
-  const handleChangeIsOnlyTranscribeActive = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setOptions({ ...options, isOnlyTranscribeActive: event.target.checked });
-    // setIsOnlyTranscribeActive(event.target.checked);
+  const handleOptionsChange = (updatedOptions: ScribeOptions) => {
+    setOptions({
+      ...options,
+      ...updatedOptions,
+    });
   };
 
-  const { isAppendToActiveFile, isOnlyTranscribeActive } = options;
+  const {
+    isAppendToActiveFile,
+    isOnlyTranscribeActive,
+    isSaveAudioFileActive,
+  } = options;
 
   return (
     <div className="scribe-recording-options">
@@ -28,7 +26,11 @@ export function ModalRecordingOptions({
         <input
           type="checkbox"
           checked={isAppendToActiveFile}
-          onChange={handleChangeIsAppendToActiveFile}
+          onChange={(event) => {
+            handleOptionsChange({
+              isAppendToActiveFile: event.target.checked,
+            });
+          }}
         />
         Append to active file
       </label>
@@ -37,9 +39,25 @@ export function ModalRecordingOptions({
         <input
           type="checkbox"
           checked={isOnlyTranscribeActive}
-          onChange={handleChangeIsOnlyTranscribeActive}
+          onChange={(event) => {
+            handleOptionsChange({
+              isOnlyTranscribeActive: event.target.checked,
+            });
+          }}
         />
         Only transcribe recording
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={isSaveAudioFileActive}
+          onChange={(event) => {
+            handleOptionsChange({
+              isSaveAudioFileActive: event.target.checked,
+            });
+          }}
+        />
+        Save audio file
       </label>
     </div>
   );

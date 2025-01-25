@@ -57,6 +57,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
     isAppendToActiveFile: false,
     isOnlyTranscribeActive: false,
+    isSaveAudioFileActive: true,
   });
 
   const { isAppendToActiveFile, isOnlyTranscribeActive } = scribeOptions;
@@ -90,7 +91,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     setIsScribing(true);
     setRecordingStartTimeMs(null);
     setRecordingState('inactive');
-    await plugin.scribe({ isAppendToActiveFile, isOnlyTranscribeActive });
+    await plugin.scribe(scribeOptions);
     setIsPaused(false);
     setIsActive(false);
     setIsScribing(false);

@@ -49,6 +49,7 @@ const DEFAULT_STATE: ScribeState = {
 export interface ScribeOptions {
   isAppendToActiveFile?: boolean;
   isOnlyTranscribeActive?: boolean;
+  isSaveAudioFileActive?: boolean;
 }
 
 export default class ScribePlugin extends Plugin {
@@ -235,7 +236,11 @@ export default class ScribePlugin extends Plugin {
     audioRecordingBuffer: ArrayBuffer;
     scribeOptions?: ScribeOptions;
   }) {
-    const { isAppendToActiveFile, isOnlyTranscribeActive } = scribeOptions;
+    const {
+      isAppendToActiveFile,
+      isOnlyTranscribeActive,
+      isSaveAudioFileActive,
+    } = scribeOptions;
     const scribeNoteFilename = `${formatFilenamePrefix(
       this.settings.noteFilenamePrefix,
       this.settings.dateFilenameFormat,
