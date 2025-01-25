@@ -11,11 +11,11 @@ import { handleCommands } from './commands/commands';
 import { getDefaultPathSettings } from './util/pathUtils';
 import { AudioRecord } from './audioRecord/audioRecord';
 import {
-  addAudioSourceToFrontmatter,
   appendTextToNote,
   createNewNote,
   renameFile,
   saveAudioRecording,
+  setupFileFrontmatter,
 } from './util/fileUtils';
 import {
   chunkAndTranscribeWithOpenAi,
@@ -257,7 +257,11 @@ export default class ScribePlugin extends Plugin {
       this.app.workspace.openLinkText(note?.path, currentPath, true);
     }
 
-    await addAudioSourceToFrontmatter(this, note, audioRecordingFile);
+    if (isSaveAudioFileActive) {
+      await setupFileFrontmatter(this, note, audioRecordingFile);
+    } else {
+      await setupFileFrontmatter(this, note);
+    }
 
     await this.cleanup();
 

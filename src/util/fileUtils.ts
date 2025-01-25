@@ -86,17 +86,18 @@ export async function renameFile(
   );
 }
 
-const TRANSCRIPT_IN_PROGRESS_HEADER = '# Transcription In Progress';
-export async function addAudioSourceToFrontmatter(
+export async function setupFileFrontmatter(
   plugin: ScribePlugin,
   noteFile: TFile,
-  audioFile: TFile,
+  audioFile?: TFile,
 ) {
   try {
     await plugin.app.fileManager.processFrontMatter(noteFile, (frontMatter) => {
       const newFrontMatter = {
         ...frontMatter,
-        source: [...(frontMatter.source || []), `[[${audioFile.path}]]`],
+        source: audioFile
+          ? [...(frontMatter.source || []), `[[${audioFile.path}]]`]
+          : frontMatter.source,
         created_by: '[[Scribe]]',
       };
 
