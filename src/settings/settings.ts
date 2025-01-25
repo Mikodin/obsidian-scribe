@@ -1,5 +1,6 @@
-import { type App, PluginSettingTab, Setting } from 'obsidian';
+import { type App, Notice, PluginSettingTab, Setting, moment } from 'obsidian';
 import type ScribePlugin from 'src';
+import { formatFilenamePrefix } from 'src/util/filenameUtils';
 import { LLM_MODELS } from 'src/util/openAiUtils';
 
 export enum TRANSCRIPT_PLATFORM {
@@ -13,6 +14,9 @@ export interface ScribePluginSettings {
   transcriptDirectory: string;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
   llmModel: LLM_MODELS;
+  recordingFilenamePrefix: string;
+  noteFilenamePrefix: string;
+  dateFilenameFormat: string;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -22,6 +26,9 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   transcriptDirectory: '',
   transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
   llmModel: LLM_MODELS['gpt-4o'],
+  noteFilenamePrefix: 'scribe-{{date}}-',
+  recordingFilenamePrefix: 'scribe-recording-{{date}}-',
+  dateFilenameFormat: 'YYYY-MM-DD',
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -40,6 +47,8 @@ export class ScribeSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
+
+    this.plugin.loadSettings();
 
     new Setting(containerEl)
       .setName('Open AI API key')
@@ -79,13 +88,15 @@ export class ScribeSettingsTab extends PluginSettingTab {
       .addDropdown((component) => {
         component.addOption('', 'Vault folder');
         for (const folder of foldersInVault) {
-          component.addOption(folder.path, folder.path);
+          const folderName = folder.path ? folder.path : 'Vault Folder';
+          component.addOption(folder.path, folderName);
         }
-        component.setValue(this.plugin.settings.recordingDirectory);
         component.onChange(async (value) => {
           this.plugin.settings.recordingDirectory = value;
-          await this.plugin.saveSettings();
+          await this.saveSettings();
         });
+
+        component.setValue(this.plugin.settings.recordingDirectory);
       });
 
     new Setting(containerEl)
@@ -94,26 +105,30 @@ export class ScribeSettingsTab extends PluginSettingTab {
       .addDropdown((component) => {
         component.addOption('', 'Vault folder');
         for (const folder of foldersInVault) {
-          component.addOption(folder.path, folder.path);
+          const folderName = folder.path === '' ? 'Vault Folder' : folder.path;
+          component.addOption(folder.path, folderName);
         }
-        component.setValue(this.plugin.settings.transcriptDirectory);
         component.onChange(async (value) => {
           this.plugin.settings.transcriptDirectory = value;
-          await this.plugin.saveSettings();
+          await this.saveSettings();
         });
+
+        component.setValue(this.plugin.settings.transcriptDirectory);
       });
 
+    containerEl.createEl('h2', { text: 'AI model options' });
     new Setting(containerEl)
       .setName('LLM model for creating the summary')
       .addDropdown((component) => {
         for (const model of Object.keys(LLM_MODELS)) {
           component.addOption(model, model);
         }
-        component.setValue(this.plugin.settings.llmModel);
         component.onChange(async (value: LLM_MODELS) => {
           this.plugin.settings.llmModel = value;
-          await this.plugin.saveSettings();
+          await this.saveSettings();
         });
+
+        component.setValue(this.plugin.settings.llmModel);
       });
 
     new Setting(containerEl)
@@ -124,11 +139,135 @@ export class ScribeSettingsTab extends PluginSettingTab {
         for (const platform of Object.keys(TRANSCRIPT_PLATFORM)) {
           component.addOption(platform, platform);
         }
-        component.setValue(this.plugin.settings.transcriptPlatform);
         component.onChange(async (value: TRANSCRIPT_PLATFORM) => {
           this.plugin.settings.transcriptPlatform = value;
-          await this.plugin.saveSettings();
+          await this.saveSettings();
         });
+
+        component.setValue(this.plugin.settings.transcriptPlatform);
       });
+
+    containerEl.createEl('h2', { text: 'File name properties' });
+    containerEl.createEl('sub', {
+      text: 'These settings must be saved via the button for validation purposes',
+    });
+
+    const isDateInPrefix = () =>
+      this.plugin.settings.noteFilenamePrefix.includes('{{date}}') ||
+      this.plugin.settings.recordingFilenamePrefix.includes('{{date}}');
+
+    new Setting(containerEl)
+      .setName('Transcript filename prefix')
+      .setDesc(
+        'This will be the prefix of the note filename, use {{date}} to include the date',
+      )
+      .addText((text) => {
+        text.setPlaceholder('scribe-');
+        text.onChange((value) => {
+          this.plugin.settings.noteFilenamePrefix = value;
+
+          dateInput.setDisabled(!isDateInPrefix());
+        });
+
+        text.setValue(this.plugin.settings.noteFilenamePrefix);
+      });
+
+    new Setting(containerEl)
+      .setName('Audio recording filename prefix')
+      .setDesc(
+        'This will be the prefix of the audio recording filename, use {{date}} to include the date',
+      )
+      .addText((text) => {
+        text.setPlaceholder('scribe-');
+        text.onChange((value) => {
+          this.plugin.settings.recordingFilenamePrefix = value;
+          dateInput.setDisabled(!isDateInPrefix());
+        });
+
+        text.setValue(this.plugin.settings.recordingFilenamePrefix);
+      });
+
+    const dateInput = new Setting(containerEl)
+      .setName('Date format')
+      .setDesc(
+        'This will only be used if {{date}} is in the transcript or audio recording filename prefix above.',
+      )
+      .addText((text) => {
+        text.setDisabled(!isDateInPrefix());
+        text.setPlaceholder('YYYY-MM-DD');
+        text.onChange((value) => {
+          this.plugin.settings.dateFilenameFormat = value;
+          console.log(value);
+          try {
+            new Notice(
+              `📆 Format: ${formatFilenamePrefix(
+                'some-prefix-{{date}}',
+                value,
+              )}`,
+            );
+          } catch (error) {
+            console.error('Invalid date format', error);
+            new Notice(`Invalid date format: ${value}`);
+          }
+        });
+
+        text.setValue(this.plugin.settings.dateFilenameFormat);
+      });
+
+    new Setting(containerEl).addButton((button) => {
+      button.setButtonText('Save settings');
+      button.onClick(async () => {
+        if (!this.plugin.settings.noteFilenamePrefix) {
+          new Notice(
+            '⚠️ You must provide a note filename prefix, setting to default',
+          );
+          this.plugin.settings.noteFilenamePrefix =
+            DEFAULT_SETTINGS.noteFilenamePrefix;
+        }
+
+        if (!this.plugin.settings.recordingFilenamePrefix) {
+          new Notice(
+            '⚠️ You must provide a recording filename prefix, setting to default',
+          );
+          this.plugin.settings.recordingFilenamePrefix =
+            DEFAULT_SETTINGS.recordingFilenamePrefix;
+        }
+
+        if (
+          this.plugin.settings.noteFilenamePrefix.includes('{{date}}') &&
+          !this.plugin.settings.dateFilenameFormat
+        ) {
+          new Notice('⚠️ You must provide a date format, setting to default');
+          this.plugin.settings.dateFilenameFormat =
+            DEFAULT_SETTINGS.dateFilenameFormat;
+        }
+
+        this.saveSettings();
+        this.display();
+      });
+    });
+
+    containerEl.createEl('sub', {
+      text: 'This functionality will improve in future versions',
+    });
+
+    new Setting(containerEl).addButton((button) => {
+      button.setButtonText('Reset to default');
+      button.onClick(async () => {
+        this.plugin.settings = {
+          ...DEFAULT_SETTINGS,
+          openAiApiKey: this.plugin.settings.openAiApiKey,
+          assemblyAiApiKey: this.plugin.settings.assemblyAiApiKey,
+        };
+
+        this.saveSettings();
+        this.display();
+      });
+    });
+  }
+
+  saveSettings() {
+    this.plugin.saveSettings();
+    new Notice('Scribe: ✅ Settings saved');
   }
 }

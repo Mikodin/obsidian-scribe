@@ -3,24 +3,24 @@ import { moment, normalizePath, type TFile } from 'obsidian';
 import type ScribePlugin from 'src';
 import type { LLMSummary } from './openAiUtils';
 
-export function createBaseFileName() {
-  const now = moment();
-
-  const fileName = `${now.format('YYYY-MM-DD.HH.mm.ss')}`;
-  return fileName;
-}
-
 export async function saveAudioRecording(
   plugin: ScribePlugin,
   recordingBuffer: ArrayBuffer,
   baseFileName: string,
 ) {
-  const fileName = baseFileName;
   const pathToSave = plugin.settings.recordingDirectory;
-  const fullPath = normalizePath(
-    `${pathToSave}/scribe-recording-${fileName}.${plugin.state.audioRecord?.fileExtension}`,
+  let fullPath = normalizePath(
+    `${pathToSave}/${baseFileName}.${plugin.state.audioRecord?.fileExtension}`,
   );
 
+  const fileAlreadyExists = await plugin.app.vault.adapter.exists(
+    fullPath,
+    true,
+  );
+  if (fileAlreadyExists) {
+    const uuid = Math.floor(Math.random() * 1000);
+    fullPath = `${pathToSave}/${baseFileName}.${uuid}.${plugin.state.audioRecord?.fileExtension}`;
+  }
   try {
     const savedFile = await plugin.app.vault.createBinary(
       fullPath,
@@ -40,15 +40,50 @@ export async function createNewNote(
   try {
     const pathToSave = plugin.settings.transcriptDirectory;
     const fullPath = `${pathToSave}/${fileName}.md`;
-    const notePath = normalizePath(fullPath);
+    let notePath = normalizePath(fullPath);
+
+    const fileAlreadyExists = await plugin.app.vault.adapter.exists(
+      notePath,
+      true,
+    );
+    if (fileAlreadyExists) {
+      const uuid = Math.floor(Math.random() * 1000);
+      notePath = normalizePath(`${pathToSave}/${fileName}.${uuid}.md`);
+    }
 
     const savedFile = await plugin.app.vault.create(notePath, '');
 
     return savedFile;
   } catch (error) {
     console.error('Failed to save file', error);
+    if (error === 'Error: File already exists') {
+      createNewNote(plugin, `${fileName}.${Math.random() * 100}`);
+    }
     throw error;
   }
+}
+
+export async function renameFile(
+  plugin: ScribePlugin,
+  originalNote: TFile,
+  newFileName: string,
+) {
+  const filePath = originalNote.path.replace(originalNote.name, '');
+  let preferredFullFileNameAndPath = `${filePath}/${newFileName}.md`;
+
+  const fileAlreadyExists = await plugin.app.vault.adapter.exists(
+    preferredFullFileNameAndPath,
+    true,
+  );
+  if (fileAlreadyExists) {
+    const uuid = Math.floor(Math.random() * 1000);
+    preferredFullFileNameAndPath = `${filePath}/${newFileName}.${uuid}.md`;
+  }
+
+  await plugin.app.fileManager.renameFile(
+    originalNote,
+    `${preferredFullFileNameAndPath}`,
+  );
 }
 
 const TRANSCRIPT_IN_PROGRESS_HEADER = '# Transcription In Progress';
@@ -100,25 +135,5 @@ export async function appendTextToNote(
   } catch (error) {
     console.error('Failed to addAudioSourceToFrontmatter', error);
     throw error;
-  }
-}
-
-export async function renameFile(
-  plugin: ScribePlugin,
-  originalNote: TFile,
-  newFileName: string,
-) {
-  const filePath = originalNote.path.replace(originalNote.name, '');
-  const preferredFullFileNameAndPath = `${filePath}/${newFileName}`;
-  try {
-    plugin.app.fileManager.renameFile(
-      originalNote,
-      `${preferredFullFileNameAndPath}.md`,
-    );
-  } catch (error) {
-    plugin.app.fileManager.renameFile(
-      originalNote,
-      `${preferredFullFileNameAndPath}.${Date.now().toString().slice(0, 2)}`,
-    );
   }
 }
