@@ -136,6 +136,7 @@ export async function summarizeTranscript(
     answeredQuestions: z
       .string()
       .optional()
+      .nullable()
       .describe(
         `If the user says "Hey Scribe" or alludes to you, asking you to do something, answer the question or do the ask and put the answers here
         Put the text in markdown, it will be nested under an h2 tag, so use a tag less than that for headers
