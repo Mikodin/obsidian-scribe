@@ -141,6 +141,10 @@ export default class ScribePlugin extends Plugin {
         audioRecordingBuffer: recordingBuffer,
         scribeOptions: scribeOptions,
       });
+
+      if (!scribeOptions.isSaveAudioFileActive) {
+        await this.app.vault.delete(recordingFile);
+      }
     } catch (error) {
       new Notice(`Scribe: Something went wrong ${error.toString()}`);
       console.error('Scribe: Something went wrong', error);
