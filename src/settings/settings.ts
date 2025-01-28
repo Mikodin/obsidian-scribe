@@ -17,6 +17,8 @@ export interface ScribePluginSettings {
   recordingFilenamePrefix: string;
   noteFilenamePrefix: string;
   dateFilenameFormat: string;
+  isSaveAudioFileActive: boolean;
+  isOnlyTranscribeActive: boolean;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -29,6 +31,8 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   noteFilenamePrefix: 'scribe-{{date}}-',
   recordingFilenamePrefix: 'scribe-recording-{{date}}-',
   dateFilenameFormat: 'YYYY-MM-DD',
+  isSaveAudioFileActive: true,
+  isOnlyTranscribeActive: false,
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -114,6 +118,33 @@ export class ScribeSettingsTab extends PluginSettingTab {
         });
 
         component.setValue(this.plugin.settings.transcriptDirectory);
+      });
+
+    containerEl.createEl('h2', { text: 'Default recording options' });
+    new Setting(containerEl)
+      .setName('Save audio file')
+      .setDesc(
+        `Save the audio file after Scribing it. If false, the audio file will be permanently deleted after transcription. This will not affect the Command for "Transcribe existing file"`,
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.isSaveAudioFileActive);
+        toggle.onChange(async (value) => {
+          this.plugin.settings.isSaveAudioFileActive = value;
+          await this.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('Only transcribe recording')
+      .setDesc(
+        'If true, we will only transcribe the recording and not generate anything additional like a summary, insights or a new filename.',
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.isOnlyTranscribeActive);
+        toggle.onChange(async (value) => {
+          this.plugin.settings.isOnlyTranscribeActive = value;
+          await this.saveSettings();
+        });
       });
 
     containerEl.createEl('h2', { text: 'AI model options' });
