@@ -56,11 +56,9 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   >(null);
   const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
     isAppendToActiveFile: false,
-    isOnlyTranscribeActive: false,
-    isSaveAudioFileActive: true,
+    isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
+    isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
   });
-
-  const { isAppendToActiveFile, isOnlyTranscribeActive } = scribeOptions;
 
   const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);
 
