@@ -98,6 +98,7 @@ export default class ScribePlugin extends Plugin {
   }
 
   async saveSettings() {
+    new Notice('Scribe: ✅ Settings saved');
     await this.saveData(this.settings);
   }
 

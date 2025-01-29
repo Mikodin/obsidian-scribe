@@ -14,5 +14,9 @@
     "strictNullChecks": true,
     "lib": ["DOM", "ES5", "ES6", "ES7"]
   },
-  "include": ["**/*.ts", "src/modal/scribeControlsModal.tsx"]
+  "include": [
+    "**/*.ts",
+    "src/modal/scribeControlsModal.tsx",
+    "src/settings/settings.tsx"
+  ]
 }
