@@ -212,13 +212,13 @@ export class ScribeSettingsTab extends PluginSettingTab {
 }
 
 const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
-  const savedNotif = useDebounce(() => {
+  const debouncedSaveSettings = useDebounce(() => {
     plugin.saveSettings();
   }, 700);
 
   return (
     <div>
-      <FileNameSettings plugin={plugin} saveSettings={savedNotif} />
+      <FileNameSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
     </div>
   );
 };
