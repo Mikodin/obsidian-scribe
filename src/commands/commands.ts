@@ -16,7 +16,10 @@ export function handleCommands(plugin: ScribePlugin) {
     callback: async () => {
       const activeFile = plugin.app.workspace.getActiveFile();
       if (activeFile) {
-        plugin.scribeExistingFile(activeFile);
+        plugin.scribeExistingFile(activeFile, {
+          isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
+          isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
+        });
       }
     },
   });

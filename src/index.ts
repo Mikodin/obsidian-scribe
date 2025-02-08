@@ -49,6 +49,7 @@ export interface ScribeOptions {
   isAppendToActiveFile?: boolean;
   isOnlyTranscribeActive?: boolean;
   isSaveAudioFileActive?: boolean;
+  isMultiSpeakerEnabled?: boolean;
 }
 
 export default class ScribePlugin extends Plugin {
@@ -156,7 +157,10 @@ export default class ScribePlugin extends Plugin {
     }
   }
 
-  async scribeExistingFile(audioFile: TFile) {
+  async scribeExistingFile(
+    audioFile: TFile,
+    scribeOptions: ScribeOptions = {},
+  ) {
     try {
       if (
         !mimeTypeToFileExtension(
@@ -172,6 +176,7 @@ export default class ScribePlugin extends Plugin {
       await this.handleScribeFile({
         audioRecordingFile: audioFile,
         audioRecordingBuffer: audioFileBuffer,
+        scribeOptions: scribeOptions,
       });
     } catch (error) {
       new Notice(`Scribe: Something went wrong ${error.toString()}`);
@@ -246,6 +251,7 @@ export default class ScribePlugin extends Plugin {
       isAppendToActiveFile,
       isOnlyTranscribeActive,
       isSaveAudioFileActive,
+      isMultiSpeakerEnabled,
     } = scribeOptions;
     const scribeNoteFilename = `${formatFilenamePrefix(
       this.settings.noteFilenamePrefix,
@@ -277,7 +283,9 @@ export default class ScribePlugin extends Plugin {
 
     await appendTextToNote(this, note, '# Transcript in progress');
 
-    const transcript = await this.handleTranscription(audioRecordingBuffer);
+    const transcript = await this.handleTranscription(audioRecordingBuffer, {
+      isMultiSpeakerEnabled,
+    });
 
     const inProgressHeaderToReplace = isAppendToActiveFile
       ? '# Transcript in progress'
@@ -323,7 +331,11 @@ export default class ScribePlugin extends Plugin {
     }
   }
 
-  async handleTranscription(audioBuffer: ArrayBuffer) {
+  async handleTranscription(
+    audioBuffer: ArrayBuffer,
+    scribeOptions: ScribeOptions,
+  ) {
+    const { isMultiSpeakerEnabled } = scribeOptions;
     try {
       new Notice(
         `Scribe: 🎧 Beginning transcription w/ ${this.settings.transcriptPlatform}`,
@@ -333,6 +345,7 @@ export default class ScribePlugin extends Plugin {
           ? await transcribeAudioWithAssemblyAi(
               this.settings.assemblyAiApiKey,
               audioBuffer,
+              { isMultiSpeakerEnabled },
             )
           : await chunkAndTranscribeWithOpenAi(
               this.settings.openAiApiKey,
