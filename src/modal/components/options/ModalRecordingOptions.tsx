@@ -22,10 +22,6 @@ export function ModalRecordingOptions({
     });
   };
 
-  useEffect(() => {
-    console.log(plugin);
-  }, [plugin]);
-
   const {
     isAppendToActiveFile,
     isOnlyTranscribeActive,

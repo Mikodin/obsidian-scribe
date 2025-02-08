@@ -18,8 +18,6 @@ export const AiModelSettings: React.FC<{
     plugin.settings.isMultiSpeakerEnabled,
   );
 
-  console.log(isMultiSpeakerEnabled);
-
   const handleToggleMultiSpeaker = () => {
     const value = !isMultiSpeakerEnabled;
     setIsMultiSpeakerEnabled(value);
