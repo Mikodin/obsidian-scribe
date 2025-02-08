@@ -1,7 +1,7 @@
 {
   "id": "scribe",
   "name": "Scribe",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "minAppVersion": "0.15.0",
   "description": "Record voice notes, Fill in lost thoughts, Transcribe the audio, Summarize & Visualize the text - All in one clip",
   "author": "Mike Alicea",
