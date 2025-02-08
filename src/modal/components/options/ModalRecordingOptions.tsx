@@ -1,11 +1,19 @@
+import { useEffect } from 'react';
 import type { ScribeOptions } from 'src';
+import type ScribePlugin from 'src';
+import { TRANSCRIPT_PLATFORM } from 'src/settings/settings';
+import type { ScribeModelOptions } from '../ModalOptionsContainer';
 
 export function ModalRecordingOptions({
+  plugin,
   options,
   setOptions,
+  modelOptions,
 }: {
+  plugin: ScribePlugin;
   options: ScribeOptions;
   setOptions: React.Dispatch<ScribeOptions>;
+  modelOptions: ScribeModelOptions;
 }) {
   const handleOptionsChange = (updatedOptions: ScribeOptions) => {
     setOptions({
@@ -14,10 +22,15 @@ export function ModalRecordingOptions({
     });
   };
 
+  useEffect(() => {
+    console.log(plugin);
+  }, [plugin]);
+
   const {
     isAppendToActiveFile,
     isOnlyTranscribeActive,
     isSaveAudioFileActive,
+    isMultiSpeakerEnabled,
   } = options;
 
   return (
@@ -59,6 +72,21 @@ export function ModalRecordingOptions({
         />
         Save audio file
       </label>
+
+      {modelOptions.transcriptPlatform === TRANSCRIPT_PLATFORM.assemblyAi && (
+        <label>
+          <input
+            type="checkbox"
+            checked={isMultiSpeakerEnabled}
+            onChange={(event) => {
+              handleOptionsChange({
+                isMultiSpeakerEnabled: event.target.checked,
+              });
+            }}
+          />
+          Multi-speaker enabled
+        </label>
+      )}
     </div>
   );
 }

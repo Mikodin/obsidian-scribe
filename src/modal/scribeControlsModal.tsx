@@ -3,11 +3,10 @@ import { Modal } from 'obsidian';
 import type ScribePlugin from 'src';
 import type { ScribeOptions } from 'src';
 import { useState } from 'react';
-import { ModalSettings } from './components/ModalSettings';
 import { ModalRecordingTimer } from './components/ModalRecordingTimer';
 import { ModalRecordingButtons } from './components/ModalRecordingButtons';
-import { ModalRecordingOptions } from './components/ModalRecordingOptions';
 import { CircleAlert } from './icons/icons';
+import { ModalOptionsContainer } from './components/ModalOptionsContainer';
 
 export class ScribeControlsModal extends Modal {
   plugin: ScribePlugin;
@@ -45,7 +44,6 @@ export class ScribeControlsModal extends Modal {
 }
 
 const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
-  const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(true);
   const [recordingState, setRecordingState] =
@@ -58,6 +56,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     isAppendToActiveFile: false,
     isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
     isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
+    isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
   });
 
   const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);
@@ -135,21 +134,11 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
       )}
 
       <hr />
-      <div className="scribe-options-container">
-        <button
-          onClick={() => setIsSettingsExpanded(!isSettingsExpanded)}
-          type="button"
-          className="scribe-settings-btn"
-        >
-          Settings
-        </button>
-        <ModalRecordingOptions
-          options={scribeOptions}
-          setOptions={setScribeOptions}
-        />
-      </div>
-
-      {isSettingsExpanded && <ModalSettings plugin={plugin} />}
+      <ModalOptionsContainer
+        plugin={plugin}
+        options={scribeOptions}
+        setOptions={setScribeOptions}
+      />
     </div>
   );
 };
