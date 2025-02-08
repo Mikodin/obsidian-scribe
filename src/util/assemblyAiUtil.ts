@@ -19,6 +19,16 @@ export async function transcribeAudioWithAssemblyAi(
 
   const transcript = await client.transcripts.transcribe(params);
 
+  let transcriptText = '';
+
+  if (isMultiSpeakerEnabled && transcript.utterances) {
+    transcriptText = (transcript.utterances || [])
+      .map((utterance) => `Speaker ${utterance.speaker}: ${utterance.text}`)
+      .join('\n');
+  } else {
+    transcriptText = transcript.text || '';
+  }
+
   if (transcript.error) {
     console.error(
       'Failed to transcribe with AssemblyAI, please try again',
@@ -27,5 +37,5 @@ export async function transcribeAudioWithAssemblyAi(
     throw new Error(transcript.error);
   }
 
-  return transcript.text || '';
+  return transcriptText;
 }
