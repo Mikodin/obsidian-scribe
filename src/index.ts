@@ -291,10 +291,13 @@ export default class ScribePlugin extends Plugin {
       ? '# Transcript in progress'
       : '\n# Transcript in progress';
 
+    const transcriptTextToAppendToNote = isSaveAudioFileActive
+      ? `# Transcript\n![[${audioRecordingFile.path}]]\n${transcript}`
+      : `# Transcript\n${transcript}`;
     await appendTextToNote(
       this,
       note,
-      `# Transcript\n![[${audioRecordingFile.path}]]\n${transcript}`,
+      transcriptTextToAppendToNote,
       inProgressHeaderToReplace,
     );
 
