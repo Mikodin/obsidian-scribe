@@ -7,6 +7,7 @@ import type ScribePlugin from 'src';
 import { LLM_MODELS } from 'src/util/openAiUtils';
 
 import { FileNameSettings } from './components/FileNameSettings';
+import { AiModelSettings } from './components/AiModelSettings';
 
 export enum TRANSCRIPT_PLATFORM {
   assemblyAi = 'assemblyAi',
@@ -18,6 +19,7 @@ export interface ScribePluginSettings {
   recordingDirectory: string;
   transcriptDirectory: string;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
+  isMultiSpeakerEnabled: boolean;
   llmModel: LLM_MODELS;
   recordingFilenamePrefix: string;
   noteFilenamePrefix: string;
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   recordingDirectory: '',
   transcriptDirectory: '',
   transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
+  isMultiSpeakerEnabled: false,
   llmModel: LLM_MODELS['gpt-4o'],
   noteFilenamePrefix: 'scribe-{{date}}-',
   recordingFilenamePrefix: 'scribe-recording-{{date}}-',
@@ -153,37 +156,6 @@ export class ScribeSettingsTab extends PluginSettingTab {
         });
       });
 
-    containerEl.createEl('h2', { text: 'AI model options' });
-    new Setting(containerEl)
-      .setName('LLM model for creating the summary')
-      .addDropdown((component) => {
-        for (const model of Object.keys(LLM_MODELS)) {
-          component.addOption(model, model);
-        }
-        component.onChange(async (value: LLM_MODELS) => {
-          this.plugin.settings.llmModel = value;
-          await this.saveSettings();
-        });
-
-        component.setValue(this.plugin.settings.llmModel);
-      });
-
-    new Setting(containerEl)
-      .setName(
-        'Transcript platform:  Your recording is uploaded to this service',
-      )
-      .addDropdown((component) => {
-        for (const platform of Object.keys(TRANSCRIPT_PLATFORM)) {
-          component.addOption(platform, platform);
-        }
-        component.onChange(async (value: TRANSCRIPT_PLATFORM) => {
-          this.plugin.settings.transcriptPlatform = value;
-          await this.saveSettings();
-        });
-
-        component.setValue(this.plugin.settings.transcriptPlatform);
-      });
-
     const reactTestWrapper = containerEl.createDiv({
       cls: 'scribe-settings-react',
     });
@@ -214,11 +186,13 @@ export class ScribeSettingsTab extends PluginSettingTab {
 const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   const debouncedSaveSettings = useDebounce(() => {
     plugin.saveSettings();
-  }, 700);
+  }, 500);
 
   return (
     <div>
+      <AiModelSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <FileNameSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
+      {/* <TemplateSettings plugin={plugin} saveSettings={debouncedSaveSettings} /> */}
     </div>
   );
 };

@@ -36,6 +36,7 @@ function scribeDropDownMenu(plugin: ScribePlugin): Menu {
         plugin.scribe({
           isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
           isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
+          isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
         });
       });
     });
