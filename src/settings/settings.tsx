@@ -39,11 +39,11 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   isMultiSpeakerEnabled: false,
   llmModel: LLM_MODELS['gpt-4o'],
   noteFilenamePrefix: 'scribe-{{date}}-',
-  recordingFilenamePrefix: 'scribe-recording-{{date}}-',
+  recordingFilenamePrefix: 'scribe-recording-{{date}}',
   dateFilenameFormat: 'YYYY-MM-DD',
   isSaveAudioFileActive: true,
   isOnlyTranscribeActive: false,
-  audioFileLanguage: LanguageOptions.EN,
+  audioFileLanguage: LanguageOptions.auto,
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
