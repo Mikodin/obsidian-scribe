@@ -57,6 +57,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
     isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
     isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
+    audioFileLanguage: plugin.settings.audioFileLanguage,
   });
 
   const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);
