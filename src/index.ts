@@ -30,6 +30,7 @@ import {
 import { extractMermaidChart } from './util/textUtil';
 import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
 import { formatFilenamePrefix } from './util/filenameUtils';
+import type { LanguageOptions } from './util/consts';
 
 export interface ScribeState {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export interface ScribeOptions {
   isOnlyTranscribeActive?: boolean;
   isSaveAudioFileActive?: boolean;
   isMultiSpeakerEnabled?: boolean;
+  audioFileLanguage?: LanguageOptions;
 }
 
 export default class ScribePlugin extends Plugin {
@@ -128,7 +130,14 @@ export default class ScribePlugin extends Plugin {
     }
   }
 
-  async scribe(scribeOptions: ScribeOptions = {}) {
+  async scribe(
+    scribeOptions: ScribeOptions = {
+      isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
+      isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
+      isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
+      audioFileLanguage: this.settings.audioFileLanguage,
+    },
+  ) {
     try {
       const baseFileName = formatFilenamePrefix(
         this.settings.recordingFilenamePrefix,
@@ -159,7 +168,12 @@ export default class ScribePlugin extends Plugin {
 
   async scribeExistingFile(
     audioFile: TFile,
-    scribeOptions: ScribeOptions = {},
+    scribeOptions: ScribeOptions = {
+      isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
+      isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
+      isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
+      audioFileLanguage: this.settings.audioFileLanguage,
+    },
   ) {
     try {
       if (
@@ -251,7 +265,6 @@ export default class ScribePlugin extends Plugin {
       isAppendToActiveFile,
       isOnlyTranscribeActive,
       isSaveAudioFileActive,
-      isMultiSpeakerEnabled,
     } = scribeOptions;
     const scribeNoteFilename = `${formatFilenamePrefix(
       this.settings.noteFilenamePrefix,
@@ -283,9 +296,10 @@ export default class ScribePlugin extends Plugin {
 
     await appendTextToNote(this, note, '# Transcript in progress');
 
-    const transcript = await this.handleTranscription(audioRecordingBuffer, {
-      isMultiSpeakerEnabled,
-    });
+    const transcript = await this.handleTranscription(
+      audioRecordingBuffer,
+      scribeOptions,
+    );
 
     const inProgressHeaderToReplace = isAppendToActiveFile
       ? '# Transcript in progress'
@@ -338,7 +352,6 @@ export default class ScribePlugin extends Plugin {
     audioBuffer: ArrayBuffer,
     scribeOptions: ScribeOptions,
   ) {
-    const { isMultiSpeakerEnabled } = scribeOptions;
     try {
       new Notice(
         `Scribe: 🎧 Beginning transcription w/ ${this.settings.transcriptPlatform}`,
@@ -348,11 +361,12 @@ export default class ScribePlugin extends Plugin {
           ? await transcribeAudioWithAssemblyAi(
               this.settings.assemblyAiApiKey,
               audioBuffer,
-              { isMultiSpeakerEnabled },
+              scribeOptions,
             )
           : await chunkAndTranscribeWithOpenAi(
               this.settings.openAiApiKey,
               audioBuffer,
+              scribeOptions,
             );
 
       new Notice(

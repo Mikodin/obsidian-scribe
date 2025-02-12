@@ -19,6 +19,8 @@ export function handleCommands(plugin: ScribePlugin) {
         plugin.scribeExistingFile(activeFile, {
           isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
           isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
+          isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
+          audioFileLanguage: plugin.settings.audioFileLanguage,
         });
       }
     },

@@ -4,6 +4,7 @@ import { SettingsItem } from './SettingsItem';
 import { set } from 'zod';
 import { TRANSCRIPT_PLATFORM } from '../settings';
 import { LLM_MODELS } from 'src/util/openAiUtils';
+import { LanguageDisplayNames, LanguageOptions } from 'src/util/consts';
 
 export const AiModelSettings: React.FC<{
   plugin: ScribePlugin;
@@ -73,6 +74,27 @@ export const AiModelSettings: React.FC<{
           }
         />
       )}
+      <SettingsItem
+        name="Spoken language"
+        description="The default spoken language for audio transcription"
+        control={
+          <select
+            defaultValue={plugin.settings.audioFileLanguage}
+            className="dropdown"
+            onChange={(e) => {
+              const value = e.target.value;
+              plugin.settings.audioFileLanguage = value as LanguageOptions;
+              saveSettings();
+            }}
+          >
+            {Object.keys(LanguageOptions).map((lang) => (
+              <option key={lang} value={lang}>
+                {LanguageDisplayNames[lang as LanguageOptions]}
+              </option>
+            ))}
+          </select>
+        }
+      />
 
       <SettingsItem
         name="LLM model for creating the summary"

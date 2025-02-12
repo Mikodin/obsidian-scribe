@@ -12,6 +12,8 @@ import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
 import { JsonOutputParser } from '@langchain/core/output_parsers';
 import { Notice } from 'obsidian';
+import type { ScribeOptions } from 'src';
+import { LanguageOptions } from './consts';
 
 export enum LLM_MODELS {
   'gpt-4o-mini' = 'gpt-4o-mini',
@@ -24,6 +26,7 @@ const MAX_CHUNK_SIZE = 25 * 1024 * 1024;
 export async function chunkAndTranscribeWithOpenAi(
   openAiKey: string,
   audioBuffer: ArrayBuffer,
+  { audioFileLanguage }: Pick<ScribeOptions, 'audioFileLanguage'>,
 ) {
   const openAiClient = new OpenAI({
     apiKey: openAiKey,
@@ -34,6 +37,7 @@ export async function chunkAndTranscribeWithOpenAi(
 
   const transcript = await transcribeAudio(openAiClient, {
     audioFiles,
+    audioFileLanguage,
   });
 
   return transcript;
@@ -49,19 +53,31 @@ export async function chunkAndTranscribeWithOpenAi(
 interface TranscriptionOptions {
   audioFiles: FileLike[];
   onChunkStart?: (i: number, totalChunks: number) => void;
+  audioFileLanguage?: LanguageOptions;
 }
 
 async function transcribeAudio(
   client: OpenAI,
-  { audioFiles, onChunkStart }: TranscriptionOptions,
+  { audioFiles, onChunkStart, audioFileLanguage }: TranscriptionOptions,
 ): Promise<string> {
   let transcript = '';
   for (const [i, file] of audioFiles.entries()) {
-    if (onChunkStart) onChunkStart(i, audioFiles.length);
-    const res = await client.audio.transcriptions.create({
+    if (onChunkStart) {
+      onChunkStart(i, audioFiles.length);
+    }
+
+    const useAudioFileLanguageSetting =
+      audioFileLanguage && audioFileLanguage !== LanguageOptions.auto;
+
+    const baseOptions = {
       model: 'whisper-1',
       file,
-    });
+    };
+    const whisperOptions = useAudioFileLanguageSetting
+      ? { ...baseOptions, language: audioFileLanguage }
+      : baseOptions;
+
+    const res = await client.audio.transcriptions.create(whisperOptions);
     const sep = i === 0 ? '' : ' ';
     transcript += sep + res.text.trim();
   }

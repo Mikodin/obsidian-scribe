@@ -1,21 +1,29 @@
 import { AssemblyAI, type TranscribeParams } from 'assemblyai';
 import type { ScribeOptions } from 'src';
+import { LanguageOptions } from './consts';
 
 export async function transcribeAudioWithAssemblyAi(
   apiKey: string,
   audioFilePath: ArrayBuffer,
-  options: Pick<ScribeOptions, 'isMultiSpeakerEnabled'>,
+  options: Pick<ScribeOptions, 'isMultiSpeakerEnabled' | 'audioFileLanguage'>,
 ): Promise<string> {
-  const { isMultiSpeakerEnabled = false } = options || {};
+  const { isMultiSpeakerEnabled = false, audioFileLanguage } = options || {};
   const client = new AssemblyAI({
     apiKey,
   });
 
-  const params: TranscribeParams = {
+  const useAudioFileLanguageSetting =
+    audioFileLanguage && audioFileLanguage !== LanguageOptions.auto;
+
+  const baseParams: TranscribeParams = {
     audio: audioFilePath,
     format_text: true,
     speaker_labels: isMultiSpeakerEnabled,
   };
+
+  const params = useAudioFileLanguageSetting
+    ? { ...baseParams, language_code: audioFileLanguage }
+    : baseParams;
 
   const transcript = await client.transcripts.transcribe(params);
 
