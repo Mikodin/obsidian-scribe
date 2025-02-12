@@ -42,7 +42,7 @@ export function ModalOptionsContainer({
         type="button"
         className="scribe-settings-btn"
       >
-        Settings
+        Model Options
       </button>
       {isModelOptionsExpanded && (
         <ModalAiModelOptions
