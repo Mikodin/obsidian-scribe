@@ -76,7 +76,7 @@ export const AiModelSettings: React.FC<{
       )}
       <SettingsItem
         name="Spoken language"
-        description="The default spoken language for audio transcription"
+        description="The default spoken language for audio transcription, changing from auto may increase accuracy"
         control={
           <select
             defaultValue={plugin.settings.audioFileLanguage}
