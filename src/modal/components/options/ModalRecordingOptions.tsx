@@ -29,6 +29,7 @@ export function ModalRecordingOptions({
     isOnlyTranscribeActive,
     isSaveAudioFileActive,
     isMultiSpeakerEnabled,
+    audioFileLanguage,
   } = options;
 
   return (
@@ -91,7 +92,7 @@ export function ModalRecordingOptions({
         description=""
         control={
           <select
-            defaultValue={plugin.settings.audioFileLanguage}
+            defaultValue={audioFileLanguage}
             className="dropdown"
             onChange={(e) => {
               handleOptionsChange({

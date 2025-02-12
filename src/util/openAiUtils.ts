@@ -121,8 +121,6 @@ export async function summarizeTranscript(
   <transcript>
   ${transcript}
   </transcript>
-
-  
   `;
   const model = new ChatOpenAI({
     model: llmModel,
