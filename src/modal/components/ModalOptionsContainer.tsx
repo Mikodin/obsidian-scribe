@@ -30,13 +30,6 @@ export function ModalOptionsContainer({
   return (
     <div>
       <div className="scribe-options-container">
-        <button
-          onClick={() => setIsModalOptionsExpanded(!isModelOptionsExpanded)}
-          type="button"
-          className="scribe-settings-btn"
-        >
-          Settings
-        </button>
         <ModalRecordingOptions
           plugin={plugin}
           options={options}
@@ -44,6 +37,13 @@ export function ModalOptionsContainer({
           modelOptions={modelOptions}
         />
       </div>
+      <button
+        onClick={() => setIsModalOptionsExpanded(!isModelOptionsExpanded)}
+        type="button"
+        className="scribe-settings-btn"
+      >
+        Settings
+      </button>
       {isModelOptionsExpanded && (
         <ModalAiModelOptions
           plugin={plugin}
