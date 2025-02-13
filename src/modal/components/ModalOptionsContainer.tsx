@@ -25,20 +25,12 @@ export function ModalOptionsContainer({
   const [isModelOptionsExpanded, setIsModalOptionsExpanded] = useState(false);
   const [isLanguageOptionsExpanded, setIsLanguageOptionsExpanded] =
     useState(false);
-  const [modelOptions, setModelOptions] = useState<ScribeModelOptions>({
-    llmModel: plugin.settings.llmModel,
-    transcriptPlatform: plugin.settings.transcriptPlatform,
-  });
 
   return (
     <div>
+      <p>Session settings</p>
       <div className="scribe-options-container">
-        <ModalRecordingOptions
-          plugin={plugin}
-          options={options}
-          setOptions={setOptions}
-          modelOptions={modelOptions}
-        />
+        <ModalRecordingOptions options={options} setOptions={setOptions} />
       </div>
 
       <button
@@ -57,19 +49,16 @@ export function ModalOptionsContainer({
         Model options
       </button>
       {isLanguageOptionsExpanded && (
-        <ModalLanguageOptions
-          plugin={plugin}
-          options={options}
-          setOptions={setOptions}
-          modelOptions={modelOptions}
-        />
+        <>
+          <h5>Language options</h5>
+          <ModalLanguageOptions options={options} setOptions={setOptions} />
+        </>
       )}
       {isModelOptionsExpanded && (
-        <ModalAiModelOptions
-          plugin={plugin}
-          modelOptions={modelOptions}
-          setModelOptions={setModelOptions}
-        />
+        <>
+          <h5>AI model options</h5>
+          <ModalAiModelOptions options={options} setOptions={setOptions} />
+        </>
       )}
     </div>
   );

@@ -19,6 +19,7 @@ import {
 } from './util/fileUtils';
 import {
   chunkAndTranscribeWithOpenAi,
+  type LLM_MODELS,
   llmFixMermaidChart,
   summarizeTranscript,
 } from './util/openAiUtils';
@@ -53,6 +54,8 @@ export interface ScribeOptions {
   isMultiSpeakerEnabled?: boolean;
   audioFileLanguage?: LanguageOptions;
   scribeOutputLanguage?: Exclude<LanguageOptions, 'auto'>;
+  transcriptPlatform?: TRANSCRIPT_PLATFORM;
+  llmModel?: LLM_MODELS;
 }
 
 export default class ScribePlugin extends Plugin {
@@ -138,6 +141,8 @@ export default class ScribePlugin extends Plugin {
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
       audioFileLanguage: this.settings.audioFileLanguage,
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
+      transcriptPlatform: this.settings.transcriptPlatform,
+      llmModel: this.settings.llmModel,
     },
   ) {
     try {
@@ -176,6 +181,8 @@ export default class ScribePlugin extends Plugin {
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
       audioFileLanguage: this.settings.audioFileLanguage,
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
+      transcriptPlatform: this.settings.transcriptPlatform,
+      llmModel: this.settings.llmModel,
     },
   ) {
     try {

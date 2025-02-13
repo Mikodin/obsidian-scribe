@@ -1,8 +1,4 @@
-import { useEffect } from 'react';
 import type { ScribeOptions } from 'src';
-import type ScribePlugin from 'src';
-import { TRANSCRIPT_PLATFORM } from 'src/settings/settings';
-import type { ScribeModelOptions } from '../ModalOptionsContainer';
 import { SettingsItem } from 'src/settings/components/SettingsItem';
 import {
   LanguageDisplayNames,
@@ -11,15 +7,11 @@ import {
 } from 'src/util/consts';
 
 export function ModalLanguageOptions({
-  plugin,
   options,
   setOptions,
-  modelOptions,
 }: {
-  plugin: ScribePlugin;
   options: ScribeOptions;
   setOptions: React.Dispatch<ScribeOptions>;
-  modelOptions: ScribeModelOptions;
 }) {
   const handleOptionsChange = (updatedOptions: ScribeOptions) => {
     setOptions({

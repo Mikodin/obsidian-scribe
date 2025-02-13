@@ -12,15 +12,11 @@ import {
 import { ButtonComponent } from 'obsidian';
 
 export function ModalRecordingOptions({
-  plugin,
   options,
   setOptions,
-  modelOptions,
 }: {
-  plugin: ScribePlugin;
   options: ScribeOptions;
   setOptions: React.Dispatch<ScribeOptions>;
-  modelOptions: ScribeModelOptions;
 }) {
   const handleOptionsChange = (updatedOptions: ScribeOptions) => {
     setOptions({
@@ -34,8 +30,7 @@ export function ModalRecordingOptions({
     isOnlyTranscribeActive,
     isSaveAudioFileActive,
     isMultiSpeakerEnabled,
-    audioFileLanguage,
-    scribeOutputLanguage,
+    transcriptPlatform,
   } = options;
 
   return (
@@ -78,7 +73,7 @@ export function ModalRecordingOptions({
         Save audio file
       </label>
 
-      {modelOptions.transcriptPlatform === TRANSCRIPT_PLATFORM.assemblyAi && (
+      {transcriptPlatform === TRANSCRIPT_PLATFORM.assemblyAi && (
         <label>
           <input
             type="checkbox"
