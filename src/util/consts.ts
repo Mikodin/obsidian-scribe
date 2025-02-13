@@ -28,6 +28,8 @@ export enum LanguageOptions {
   vi = 'vi',
 }
 
+export type OutputLanguageOptions = Exclude<LanguageOptions, 'auto'>;
+
 export const LanguageDisplayNames: { [key in LanguageOptions]: string } = {
   [LanguageOptions.auto]: 'Auto Detect',
   [LanguageOptions.en]: 'English',

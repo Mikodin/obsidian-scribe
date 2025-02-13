@@ -4,7 +4,12 @@ import type ScribePlugin from 'src';
 import { TRANSCRIPT_PLATFORM } from 'src/settings/settings';
 import type { ScribeModelOptions } from '../ModalOptionsContainer';
 import { SettingsItem } from 'src/settings/components/SettingsItem';
-import { LanguageDisplayNames, LanguageOptions } from 'src/util/consts';
+import {
+  LanguageDisplayNames,
+  LanguageOptions,
+  type OutputLanguageOptions,
+} from 'src/util/consts';
+import { ButtonComponent } from 'obsidian';
 
 export function ModalRecordingOptions({
   plugin,
@@ -30,6 +35,7 @@ export function ModalRecordingOptions({
     isSaveAudioFileActive,
     isMultiSpeakerEnabled,
     audioFileLanguage,
+    scribeOutputLanguage,
   } = options;
 
   return (
@@ -86,28 +92,6 @@ export function ModalRecordingOptions({
           Multi-speaker enabled
         </label>
       )}
-
-      <SettingsItem
-        name="Spoken language"
-        description=""
-        control={
-          <select
-            defaultValue={audioFileLanguage}
-            className="dropdown"
-            onChange={(e) => {
-              handleOptionsChange({
-                audioFileLanguage: e.target.value as LanguageOptions,
-              });
-            }}
-          >
-            {Object.keys(LanguageOptions).map((lang) => (
-              <option key={lang} value={lang}>
-                {LanguageDisplayNames[lang as LanguageOptions]}
-              </option>
-            ))}
-          </select>
-        }
-      />
     </div>
   );
 }

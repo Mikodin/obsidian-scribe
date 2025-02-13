@@ -52,6 +52,7 @@ export interface ScribeOptions {
   isSaveAudioFileActive?: boolean;
   isMultiSpeakerEnabled?: boolean;
   audioFileLanguage?: LanguageOptions;
+  scribeOutputLanguage?: Exclude<LanguageOptions, 'auto'>;
 }
 
 export default class ScribePlugin extends Plugin {
@@ -136,6 +137,7 @@ export default class ScribePlugin extends Plugin {
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
       audioFileLanguage: this.settings.audioFileLanguage,
+      scribeOutputLanguage: this.settings.scribeOutputLanguage,
     },
   ) {
     try {
@@ -173,6 +175,7 @@ export default class ScribePlugin extends Plugin {
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
       audioFileLanguage: this.settings.audioFileLanguage,
+      scribeOutputLanguage: this.settings.scribeOutputLanguage,
     },
   ) {
     try {
@@ -319,7 +322,10 @@ export default class ScribePlugin extends Plugin {
       return;
     }
 
-    const llmSummary = await this.handleTranscriptSummary(transcript);
+    const llmSummary = await this.handleTranscriptSummary(
+      transcript,
+      scribeOptions,
+    );
     await appendTextToNote(this, note, `## Summary\n${llmSummary.summary}`);
     await appendTextToNote(this, note, `## Insights\n${llmSummary.insights}`);
 
@@ -386,11 +392,15 @@ export default class ScribePlugin extends Plugin {
     }
   }
 
-  async handleTranscriptSummary(transcript: string) {
+  async handleTranscriptSummary(
+    transcript: string,
+    scribeOptions: ScribeOptions,
+  ) {
     new Notice('Scribe: 🧠 Sending to LLM to summarize');
     const llmSummary = await summarizeTranscript(
       this.settings.openAiApiKey,
       transcript,
+      scribeOptions,
       this.settings.llmModel,
     );
     new Notice('Scribe: 🧠 LLM summation complete');

@@ -8,7 +8,7 @@ import { LLM_MODELS } from 'src/util/openAiUtils';
 
 import { FileNameSettings } from './components/FileNameSettings';
 import { AiModelSettings } from './components/AiModelSettings';
-import { LanguageOptions } from 'src/util/consts';
+import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
 
 export enum TRANSCRIPT_PLATFORM {
   assemblyAi = 'assemblyAi',
@@ -28,6 +28,7 @@ export interface ScribePluginSettings {
   isSaveAudioFileActive: boolean;
   isOnlyTranscribeActive: boolean;
   audioFileLanguage: LanguageOptions;
+  scribeOutputLanguage?: OutputLanguageOptions;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   isSaveAudioFileActive: true,
   isOnlyTranscribeActive: false,
   audioFileLanguage: LanguageOptions.auto,
+  scribeOutputLanguage: LanguageOptions.en,
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {

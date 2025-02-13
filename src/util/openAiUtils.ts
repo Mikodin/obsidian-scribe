@@ -94,6 +94,7 @@ export interface LLMSummary {
 export async function summarizeTranscript(
   openAiKey: string,
   transcript: string,
+  { scribeOutputLanguage }: ScribeOptions,
   llmModel: LLM_MODELS = LLM_MODELS['gpt-4o'],
 ) {
   const systemPrompt = `
@@ -110,7 +111,7 @@ export async function summarizeTranscript(
   - Clean
   - Logical
   - Insightful
-
+  
   It will be nested under a h2 # tag, feel free to nest headers underneath it
   Rules:
   - Do not include escaped new line characters
@@ -128,6 +129,13 @@ export async function summarizeTranscript(
     temperature: 0.5,
   });
   const messages = [new SystemMessage(systemPrompt)];
+
+  console.log('scribeOutputLanguage', scribeOutputLanguage);
+  if (scribeOutputLanguage) {
+    messages.push(
+      new SystemMessage(`Please respond in ${scribeOutputLanguage} language`),
+    );
+  }
 
   const noteSummary = z.object({
     summary: z.string().describe(
