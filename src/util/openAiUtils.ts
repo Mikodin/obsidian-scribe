@@ -130,7 +130,6 @@ export async function summarizeTranscript(
   });
   const messages = [new SystemMessage(systemPrompt)];
 
-  console.log('scribeOutputLanguage', scribeOutputLanguage);
   if (scribeOutputLanguage) {
     messages.push(
       new SystemMessage(`Please respond in ${scribeOutputLanguage} language`),
