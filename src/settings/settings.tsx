@@ -28,7 +28,7 @@ export interface ScribePluginSettings {
   isSaveAudioFileActive: boolean;
   isOnlyTranscribeActive: boolean;
   audioFileLanguage: LanguageOptions;
-  scribeOutputLanguage?: OutputLanguageOptions;
+  scribeOutputLanguage: OutputLanguageOptions;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {

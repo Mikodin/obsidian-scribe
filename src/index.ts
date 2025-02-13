@@ -48,14 +48,14 @@ const DEFAULT_STATE: ScribeState = {
 };
 
 export interface ScribeOptions {
-  isAppendToActiveFile?: boolean;
-  isOnlyTranscribeActive?: boolean;
-  isSaveAudioFileActive?: boolean;
-  isMultiSpeakerEnabled?: boolean;
-  audioFileLanguage?: LanguageOptions;
-  scribeOutputLanguage?: Exclude<LanguageOptions, 'auto'>;
-  transcriptPlatform?: TRANSCRIPT_PLATFORM;
-  llmModel?: LLM_MODELS;
+  isAppendToActiveFile: boolean;
+  isOnlyTranscribeActive: boolean;
+  isSaveAudioFileActive: boolean;
+  isMultiSpeakerEnabled: boolean;
+  audioFileLanguage: LanguageOptions;
+  scribeOutputLanguage: Exclude<LanguageOptions, 'auto'>;
+  transcriptPlatform: TRANSCRIPT_PLATFORM;
+  llmModel: LLM_MODELS;
 }
 
 export default class ScribePlugin extends Plugin {
@@ -136,6 +136,7 @@ export default class ScribePlugin extends Plugin {
 
   async scribe(
     scribeOptions: ScribeOptions = {
+      isAppendToActiveFile: false,
       isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
@@ -176,6 +177,7 @@ export default class ScribePlugin extends Plugin {
   async scribeExistingFile(
     audioFile: TFile,
     scribeOptions: ScribeOptions = {
+      isAppendToActiveFile: false,
       isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
@@ -265,11 +267,11 @@ export default class ScribePlugin extends Plugin {
   async handleScribeFile({
     audioRecordingFile,
     audioRecordingBuffer,
-    scribeOptions = {},
+    scribeOptions,
   }: {
     audioRecordingFile: TFile;
     audioRecordingBuffer: ArrayBuffer;
-    scribeOptions?: ScribeOptions;
+    scribeOptions: ScribeOptions;
   }) {
     const {
       isAppendToActiveFile,

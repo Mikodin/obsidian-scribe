@@ -15,7 +15,7 @@ export function ModalAiModelOptions({
   options: ScribeOptions;
   setOptions: React.Dispatch<ScribeOptions>;
 }) {
-  const handleOptionsChange = (updatedOptions: ScribeOptions) => {
+  const handleOptionsChange = (updatedOptions: Partial<ScribeOptions>) => {
     setOptions({
       ...options,
       ...updatedOptions,
