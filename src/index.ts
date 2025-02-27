@@ -28,7 +28,7 @@ import {
   mimeTypeToFileExtension,
   type SupportedMimeType,
 } from './util/mimeType';
-import { extractMermaidChart } from './util/textUtil';
+import { convertToSafeJsonKey, extractMermaidChart } from './util/textUtil';
 import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
 import { formatFilenamePrefix } from './util/filenameUtils';
 import type { LanguageOptions } from './util/consts';
@@ -335,22 +335,34 @@ export default class ScribePlugin extends Plugin {
       transcript,
       scribeOptions,
     );
-    await appendTextToNote(this, note, `## Summary\n${llmSummary.summary}`);
-    await appendTextToNote(this, note, `## Insights\n${llmSummary.insights}`);
 
-    if (llmSummary.answeredQuestions) {
+    this.settings.activeNoteTemplate.forEach(async (section) => {
+      const sectionHeader = section.title;
+      const sectionKey = convertToSafeJsonKey(section.title);
+      // @ts-expect-error it's all good for now
+      const sectionValue = llmSummary[sectionKey] as string;
+      const isCodeBlock = Boolean(section.codeBlockPrefix);
+
+      if (section.optional && !sectionValue) {
+        return;
+      }
+
+      if (isCodeBlock) {
+        await appendTextToNote(
+          this,
+          note,
+          `## ${sectionHeader}\n${section.codeBlockPrefix}\n${sectionValue}\n\`\`\``,
+        );
+
+        return;
+      }
+
       await appendTextToNote(
         this,
         note,
-        `## Answered Questions\n${llmSummary.answeredQuestions}`,
+        `## ${sectionHeader}\n${sectionValue}`,
       );
-    }
-
-    await appendTextToNote(
-      this,
-      note,
-      `## Mermaid Chart\n\`\`\`mermaid\n${llmSummary.mermaidChart}\n\`\`\``,
-    );
+    });
 
     const shouldRenameNote = !isAppendToActiveFile;
     if (shouldRenameNote) {
