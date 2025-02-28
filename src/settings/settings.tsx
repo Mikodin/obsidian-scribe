@@ -10,7 +10,8 @@ import { FileNameSettings } from './components/FileNameSettings';
 import { AiModelSettings } from './components/AiModelSettings';
 import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
 import {
-  DEFAULT_SECTIONS,
+  DEFAULT_TEMPLATE,
+  type ScribeTemplate,
   TemplateSettings,
 } from './components/TemplateSettings';
 
@@ -33,7 +34,7 @@ export interface ScribePluginSettings {
   isOnlyTranscribeActive: boolean;
   audioFileLanguage: LanguageOptions;
   scribeOutputLanguage: OutputLanguageOptions;
-  activeNoteTemplate: typeof DEFAULT_SECTIONS;
+  activeNoteTemplate: ScribeTemplate;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -51,7 +52,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   isOnlyTranscribeActive: false,
   audioFileLanguage: LanguageOptions.auto,
   scribeOutputLanguage: LanguageOptions.en,
-  activeNoteTemplate: DEFAULT_SECTIONS,
+  activeNoteTemplate: DEFAULT_TEMPLATE,
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {

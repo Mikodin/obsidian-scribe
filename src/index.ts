@@ -336,7 +336,7 @@ export default class ScribePlugin extends Plugin {
       scribeOptions,
     );
 
-    this.settings.activeNoteTemplate.forEach(async (section) => {
+    this.settings.activeNoteTemplate.sections.forEach(async (section) => {
       const { sectionHeader, sectionOutputPrefix, isSectionOptional } = section;
       const sectionKey = convertToSafeJsonKey(sectionHeader);
       const sectionValue = llmSummary[sectionKey];
