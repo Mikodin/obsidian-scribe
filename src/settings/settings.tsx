@@ -12,8 +12,8 @@ import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
 import {
   DEFAULT_TEMPLATE,
   type ScribeTemplate,
-  TemplateSettings,
-} from './components/TemplateSettings';
+  NoteTemplateSettings,
+} from './components/NoteTemplateSettings';
 
 export enum TRANSCRIPT_PLATFORM {
   assemblyAi = 'assemblyAi',
@@ -35,6 +35,7 @@ export interface ScribePluginSettings {
   audioFileLanguage: LanguageOptions;
   scribeOutputLanguage: OutputLanguageOptions;
   activeNoteTemplate: ScribeTemplate;
+  noteTemplates: ScribeTemplate[];
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -53,6 +54,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   audioFileLanguage: LanguageOptions.auto,
   scribeOutputLanguage: LanguageOptions.en,
   activeNoteTemplate: DEFAULT_TEMPLATE,
+  noteTemplates: [DEFAULT_TEMPLATE],
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -204,8 +206,10 @@ const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     <div>
       <AiModelSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <FileNameSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
-      <TemplateSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
-      {/* <TemplateSettings plugin={plugin} saveSettings={debouncedSaveSettings} /> */}
+      <NoteTemplateSettings
+        plugin={plugin}
+        saveSettings={debouncedSaveSettings}
+      />
     </div>
   );
 };
