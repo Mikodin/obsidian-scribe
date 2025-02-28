@@ -85,13 +85,6 @@ async function transcribeAudio(
   return transcript;
 }
 
-export interface LLMSummary {
-  summary: string;
-  title: string;
-  insights: string;
-  mermaidChart: string;
-  answeredQuestions?: string;
-}
 export async function summarizeTranscript(
   openAiKey: string,
   transcript: string,
@@ -137,18 +130,21 @@ export async function summarizeTranscript(
     );
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: it's all good for now
-  const schema: Record<string, z.ZodType<any>> = {};
+  const schema: Record<string, z.ZodType<string | null | undefined>> = {};
 
   DEFAULT_SECTIONS.forEach((section) => {
-    schema[convertToSafeJsonKey(section.title)] = section.optional
-      ? z.string().optional().nullable().describe(section.description)
-      : z.string().describe(section.description);
+    const { sectionHeader, sectionInstructions, isSectionOptional } = section;
+    schema[convertToSafeJsonKey(sectionHeader)] = isSectionOptional
+      ? z.string().optional().nullable().describe(sectionInstructions)
+      : z.string().describe(sectionInstructions);
   });
 
   const structuredOutput = z.object(schema);
   const structuredLlm = model.withStructuredOutput(structuredOutput);
-  const result = (await structuredLlm.invoke(messages)) as LLMSummary;
+  const result = (await structuredLlm.invoke(messages)) as Record<
+    string,
+    string
+  >;
 
   return await result;
 }

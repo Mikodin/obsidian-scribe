@@ -337,21 +337,19 @@ export default class ScribePlugin extends Plugin {
     );
 
     this.settings.activeNoteTemplate.forEach(async (section) => {
-      const sectionHeader = section.title;
-      const sectionKey = convertToSafeJsonKey(section.title);
-      // @ts-expect-error it's all good for now
-      const sectionValue = llmSummary[sectionKey] as string;
-      const isCodeBlock = Boolean(section.codeBlockPrefix);
+      const { sectionHeader, sectionOutputPrefix, isSectionOptional } = section;
+      const sectionKey = convertToSafeJsonKey(sectionHeader);
+      const sectionValue = llmSummary[sectionKey];
 
-      if (section.optional && !sectionValue) {
+      if (isSectionOptional && !sectionValue) {
         return;
       }
 
-      if (isCodeBlock) {
+      if (sectionOutputPrefix) {
         await appendTextToNote(
           this,
           note,
-          `## ${sectionHeader}\n${section.codeBlockPrefix}\n${sectionValue}\n\`\`\``,
+          `## ${sectionHeader}\n${sectionOutputPrefix}\n${sectionValue}\n\`\`\``,
         );
 
         return;
