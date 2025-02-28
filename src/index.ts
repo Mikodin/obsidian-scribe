@@ -363,11 +363,11 @@ export default class ScribePlugin extends Plugin {
     });
 
     const shouldRenameNote = !isAppendToActiveFile;
-    if (shouldRenameNote) {
+    if (shouldRenameNote && llmSummary.fileTitle) {
       const llmFileName = `${formatFilenamePrefix(
         this.settings.noteFilenamePrefix,
         this.settings.dateFilenameFormat,
-      )}${normalizePath(llmSummary.title)}`;
+      )}${normalizePath(llmSummary.fileTitle)}`;
 
       await renameFile(this, note, llmFileName);
     }

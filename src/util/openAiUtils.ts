@@ -130,7 +130,13 @@ export async function summarizeTranscript(
     );
   }
 
-  const schema: Record<string, z.ZodType<string | null | undefined>> = {};
+  const schema: Record<string, z.ZodType<string | null | undefined>> = {
+    fileTitle: z
+      .string()
+      .describe(
+        'A suggested title for the Obsidian Note. Ensure that it is in the proper format for a file on mac, windows and linux, do not include any special characters',
+      ),
+  };
 
   DEFAULT_SECTIONS.forEach((section) => {
     const { sectionHeader, sectionInstructions, isSectionOptional } = section;
@@ -144,7 +150,7 @@ export async function summarizeTranscript(
   const result = (await structuredLlm.invoke(messages)) as Record<
     string,
     string
-  >;
+  > & { fileTitle: string };
 
   return await result;
 }

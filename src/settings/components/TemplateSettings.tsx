@@ -37,11 +37,6 @@ export const DEFAULT_SECTIONS: Section[] = [
         Summarize the question in a short sentence as a header and format place your reply nicely below for as many questions as there are
         Answer their questions in a clear and concise manner`,
   },
-  {
-    sectionHeader: 'File Title',
-    sectionInstructions:
-      'A suggested title for the Obsidian Note. Ensure that it is in the proper format for a file on mac, windows and linux, do not include any special characters',
-  },
 ];
 
 const TemplateSection: React.FC<{ section: Section }> = ({ section }) => {
