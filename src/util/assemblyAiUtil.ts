@@ -31,7 +31,7 @@ export async function transcribeAudioWithAssemblyAi(
 
   if (isMultiSpeakerEnabled && transcript.utterances) {
     transcriptText = (transcript.utterances || [])
-      .map((utterance) => `Speaker ${utterance.speaker}: ${utterance.text}`)
+      .map((utterance) => `**Speaker ${utterance.speaker}**: ${utterance.text}`)
       .join('\n');
   } else {
     transcriptText = transcript.text || '';
