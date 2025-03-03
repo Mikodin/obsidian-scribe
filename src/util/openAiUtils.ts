@@ -14,7 +14,6 @@ import { Notice } from 'obsidian';
 import type { ScribeOptions } from 'src';
 import { LanguageOptions } from './consts';
 import { convertToSafeJsonKey } from './textUtil';
-import { DEFAULT_TEMPLATE } from 'src/settings/components/NoteTemplateSettings';
 
 export enum LLM_MODELS {
   'gpt-4o-mini' = 'gpt-4o-mini',
@@ -138,7 +137,6 @@ export async function summarizeTranscript(
       ),
   };
 
-  console.log('activeNoteTemplate', activeNoteTemplate);
   activeNoteTemplate.sections.forEach((section) => {
     const { sectionHeader, sectionInstructions, isSectionOptional } = section;
     schema[convertToSafeJsonKey(sectionHeader)] = isSectionOptional

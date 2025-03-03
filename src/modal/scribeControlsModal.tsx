@@ -61,6 +61,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     scribeOutputLanguage: plugin.settings.scribeOutputLanguage,
     transcriptPlatform: plugin.settings.transcriptPlatform,
     llmModel: plugin.settings.llmModel,
+    activeNoteTemplate: plugin.settings.activeNoteTemplate,
   });
 
   const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);

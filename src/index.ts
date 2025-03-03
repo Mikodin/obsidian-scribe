@@ -281,6 +281,7 @@ export default class ScribePlugin extends Plugin {
       isAppendToActiveFile,
       isOnlyTranscribeActive,
       isSaveAudioFileActive,
+      activeNoteTemplate,
     } = scribeOptions;
     const scribeNoteFilename = `${formatFilenamePrefix(
       this.settings.noteFilenamePrefix,
@@ -340,7 +341,7 @@ export default class ScribePlugin extends Plugin {
       scribeOptions,
     );
 
-    this.settings.activeNoteTemplate.sections.forEach(async (section) => {
+    activeNoteTemplate.sections.forEach(async (section) => {
       const { sectionHeader, sectionOutputPrefix, isSectionOptional } = section;
       const sectionKey = convertToSafeJsonKey(sectionHeader);
       const sectionValue = llmSummary[sectionKey];

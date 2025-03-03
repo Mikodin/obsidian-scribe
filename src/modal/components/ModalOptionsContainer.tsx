@@ -30,7 +30,11 @@ export function ModalOptionsContainer({
     <div>
       <p>Session settings</p>
       <div className="scribe-options-container">
-        <ModalRecordingOptions options={options} setOptions={setOptions} />
+        <ModalRecordingOptions
+          options={options}
+          setOptions={setOptions}
+          noteTemplates={plugin.settings.noteTemplates}
+        />
       </div>
 
       <button

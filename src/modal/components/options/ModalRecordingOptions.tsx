@@ -10,13 +10,16 @@ import {
   type OutputLanguageOptions,
 } from 'src/util/consts';
 import { ButtonComponent } from 'obsidian';
+import type { ScribeTemplate } from 'src/settings/components/NoteTemplateSettings';
 
 export function ModalRecordingOptions({
   options,
   setOptions,
+  noteTemplates,
 }: {
   options: ScribeOptions;
   setOptions: React.Dispatch<ScribeOptions>;
+  noteTemplates: ScribeTemplate[];
 }) {
   const handleOptionsChange = (updatedOptions: Partial<ScribeOptions>) => {
     setOptions({
@@ -31,6 +34,7 @@ export function ModalRecordingOptions({
     isSaveAudioFileActive,
     isMultiSpeakerEnabled,
     transcriptPlatform,
+    activeNoteTemplate,
   } = options;
 
   return (
@@ -87,6 +91,31 @@ export function ModalRecordingOptions({
           Multi-speaker enabled
         </label>
       )}
+
+      <SettingsItem
+        name="Note Template"
+        description=""
+        control={
+          <select
+            defaultValue={activeNoteTemplate.name}
+            className="dropdown"
+            onChange={(e) => {
+              const selectedTemplate = noteTemplates.find(
+                (template) => template.name === e.target.value,
+              );
+              handleOptionsChange({
+                activeNoteTemplate: selectedTemplate,
+              });
+            }}
+          >
+            {noteTemplates.map((template) => (
+              <option key={template.name} value={template.name}>
+                {template.name}
+              </option>
+            ))}
+          </select>
+        }
+      />
     </div>
   );
 }
