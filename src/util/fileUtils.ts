@@ -1,7 +1,6 @@
-import { moment, normalizePath, type TFile } from 'obsidian';
+import { normalizePath, type TFile } from 'obsidian';
 
 import type ScribePlugin from 'src';
-import type { LLMSummary } from './openAiUtils';
 
 export async function saveAudioRecording(
   plugin: ScribePlugin,

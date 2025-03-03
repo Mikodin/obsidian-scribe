@@ -289,12 +289,12 @@ export default class ScribePlugin extends Plugin {
     )}`;
 
     let note = isAppendToActiveFile
-      ? this.app.workspace.getActiveFile()
+      ? (this.app.workspace.getActiveFile() as TFile)
       : await createNewNote(this, scribeNoteFilename);
 
     if (!note) {
       new Notice('Scribe: ⚠️ No active file to append to, creating new one!');
-      note = await createNewNote(this, scribeNoteFilename);
+      note = (await createNewNote(this, scribeNoteFilename)) as TFile;
 
       const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
       this.app.workspace.openLinkText(note?.path, currentPath, true);
