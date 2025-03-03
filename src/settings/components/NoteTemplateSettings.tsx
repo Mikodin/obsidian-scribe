@@ -22,15 +22,15 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
       id: '1',
       sectionHeader: 'Summary',
       sectionInstructions: `A summary of the transcript in Markdown.  It will be nested under a h2 # tag, so use a tag less than that for headers
-         Concise bullet points containing the primary points of the speaker`,
+Concise bullet points containing the primary points of the speaker`,
     },
     {
       id: '2',
       sectionHeader: 'Insights',
       sectionInstructions: `Insights that you gained from the transcript in Markdown.
-        A brief section, a paragraph or two on what insights and enhancements you think of
-        Several bullet points on things you think would be an improvement, feel free to use headers
-        It will be nested under an h2 tag, so use a tag less than that for headers
+A brief section, a paragraph or two on what insights and enhancements you think of
+Several bullet points on things you think would be an improvement, feel free to use headers
+It will be nested under an h2 tag, so use a tag less than that for headers
         `,
     },
     {
@@ -39,17 +39,17 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
       sectionOutputPrefix: '```mermaid',
       sectionOutputPostfix: '```',
       sectionInstructions: `A valid unicode mermaid chart that shows a concept map consisting of both what insights you had along with what the speaker said for the mermaid chart, 
-        Dont wrap it in anything, just output the mermaid chart.  
-        Do not use any special characters that arent letters in the nodes text, particularly new lines, tabs, or special characters like apostraphes or quotes or commas`,
+Dont wrap it in anything, just output the mermaid chart.  
+Do not use any special characters that arent letters in the nodes text, particularly new lines, tabs, or special characters like apostraphes or quotes or commas`,
     },
     {
       id: '4',
       sectionHeader: 'Answered Questions',
       isSectionOptional: true,
       sectionInstructions: `If the user says "Hey Scribe" or alludes to you, asking you to do something, answer the question or do the ask and put the answers here
-        Put the text in markdown, it will be nested under an h2 tag, so use a tag less than that for headers
-        Summarize the question in a short sentence as a header and format place your reply nicely below for as many questions as there are
-        Answer their questions in a clear and concise manner`,
+Put the text in markdown, it will be nested under an h2 tag, so use a tag less than that for headers
+Summarize the question in a short sentence as a header and format place your reply nicely below for as many questions as there are
+Answer their questions in a clear and concise manner`,
     },
   ],
 };
@@ -92,14 +92,22 @@ const TemplateSection: React.FC<{
       <p>Section Instructions</p>
       <textarea
         value={section.sectionInstructions}
-        rows={3}
+        // rows={3}
         onChange={(e) => {
           updateSection({ ...section, sectionInstructions: e.target.value });
         }}
-        style={{ width: '100%', resize: 'none', overflow: 'hidden' }}
+        rows={3}
+        style={{
+          width: '100%',
+          overflow: 'visible',
+          height: 'auto',
+        }}
+        onFocus={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          target.style.height = `${target.scrollHeight}px`;
+        }}
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement;
-          target.style.height = 'auto';
           target.style.height = `${target.scrollHeight}px`;
         }}
       />
@@ -220,6 +228,21 @@ const TemplateControls: React.FC<{
       <button
         type="button"
         onClick={() => {
+          const clonedTemplate: ScribeTemplate = {
+            ...activeTemplate,
+            name: `${activeTemplate.name} (Copy)`,
+          };
+          const updatedTemplates = [...noteTemplates, clonedTemplate];
+          setNoteTemplates(updatedTemplates);
+          setActiveTemplate(clonedTemplate);
+        }}
+      >
+        Clone Template
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
           const updatedTemplates = noteTemplates.filter(
             (template) => template.name !== activeTemplate.name,
           );
@@ -262,7 +285,7 @@ const TemplateControls: React.FC<{
         type="button"
         onClick={() => {
           const newSection: TemplateSection = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             sectionHeader: 'New Section',
             sectionInstructions: 'New Section Instructions',
           };
@@ -299,6 +322,8 @@ export const NoteTemplateSettings: React.FC<{
   const [activeTemplate, setActiveTemplate] = useState(
     plugin.settings.activeNoteTemplate,
   );
+
+  console.log(activeTemplate);
 
   useEffect(() => {
     plugin.settings.noteTemplates = noteTemplates;
