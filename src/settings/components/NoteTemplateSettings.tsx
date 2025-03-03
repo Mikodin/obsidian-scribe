@@ -323,8 +323,6 @@ export const NoteTemplateSettings: React.FC<{
     plugin.settings.activeNoteTemplate,
   );
 
-  console.log(activeTemplate);
-
   useEffect(() => {
     plugin.settings.noteTemplates = noteTemplates;
     plugin.settings.activeNoteTemplate = activeTemplate;
