@@ -92,7 +92,6 @@ const TemplateSection: React.FC<{
       <p>Section Instructions</p>
       <textarea
         value={section.sectionInstructions}
-        // rows={3}
         onChange={(e) => {
           updateSection({ ...section, sectionInstructions: e.target.value });
         }}
