@@ -7,6 +7,7 @@ export interface ScribeTemplate {
   sections: TemplateSection[];
 }
 export interface TemplateSection {
+  id: string;
   sectionHeader: string;
   sectionInstructions: string;
   isSectionOptional?: boolean;
@@ -17,11 +18,13 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
   name: 'Default Template',
   sections: [
     {
+      id: '1',
       sectionHeader: 'Summary',
       sectionInstructions: `A summary of the transcript in Markdown.  It will be nested under a h2 # tag, so use a tag less than that for headers
          Concise bullet points containing the primary points of the speaker`,
     },
     {
+      id: '2',
       sectionHeader: 'Insights',
       sectionInstructions: `Insights that you gained from the transcript in Markdown.
         A brief section, a paragraph or two on what insights and enhancements you think of
@@ -30,6 +33,7 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
         `,
     },
     {
+      id: '3',
       sectionHeader: 'Mermaid Chart',
       sectionOutputPrefix: '```mermaid',
       sectionInstructions: `A valid unicode mermaid chart that shows a concept map consisting of both what insights you had along with what the speaker said for the mermaid chart, 
@@ -37,6 +41,7 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
         Do not use any special characters that arent letters in the nodes text, particularly new lines, tabs, or special characters like apostraphes or quotes or commas`,
     },
     {
+      id: '4',
       sectionHeader: 'Answered Questions',
       isSectionOptional: true,
       sectionInstructions: `If the user says "Hey Scribe" or alludes to you, asking you to do something, answer the question or do the ask and put the answers here
@@ -47,9 +52,18 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
   ],
 };
 
-const TemplateSection: React.FC<{ section: TemplateSection }> = ({
-  section,
-}) => {
+const TemplateSection: React.FC<{
+  section: TemplateSection;
+  activeTemplate: ScribeTemplate;
+  setActiveTemplate: (template: ScribeTemplate) => void;
+}> = ({ section, activeTemplate, setActiveTemplate }) => {
+  const updateSection = (updatedSection: TemplateSection) => {
+    const updatedSections = activeTemplate.sections.map((sec) =>
+      sec.sectionHeader === section.sectionHeader ? updatedSection : sec,
+    );
+    setActiveTemplate({ ...activeTemplate, sections: updatedSections });
+  };
+
   return (
     <div style={{ width: '100%' }}>
       <SettingsItem
@@ -60,9 +74,7 @@ const TemplateSection: React.FC<{ section: TemplateSection }> = ({
             type="text"
             value={section.sectionHeader}
             onChange={(e) => {
-              // setNoteFilenamePrefix(e.target.value);
-              // plugin.settings.noteFilenamePrefix = e.target.value;
-              // saveSettings();
+              updateSection({ ...section, sectionHeader: e.target.value });
             }}
           />
         }
@@ -73,9 +85,7 @@ const TemplateSection: React.FC<{ section: TemplateSection }> = ({
         value={section.sectionInstructions}
         rows={3}
         onChange={(e) => {
-          // setNoteFilenamePrefix(e.target.value);
-          // plugin.settings.noteFilenamePrefix = e.target.value;
-          // saveSettings();
+          updateSection({ ...section, sectionInstructions: e.target.value });
         }}
         style={{ width: '100%', resize: 'none', overflow: 'hidden' }}
         onInput={(e) => {
@@ -187,6 +197,7 @@ const TemplateControls: React.FC<{
         type="button"
         onClick={() => {
           const newSection: TemplateSection = {
+            id: Date.now().toString(),
             sectionHeader: 'New Section',
             sectionInstructions: 'New Section Instructions',
           };
@@ -240,7 +251,12 @@ export const NoteTemplateSettings: React.FC<{
         setActiveTemplate={setActiveTemplate}
       />
       {activeTemplate.sections.map((section) => (
-        <TemplateSection key={section.sectionHeader} section={section} />
+        <TemplateSection
+          key={section.id}
+          section={section}
+          activeTemplate={activeTemplate}
+          setActiveTemplate={setActiveTemplate}
+        />
       ))}
     </div>
   );
