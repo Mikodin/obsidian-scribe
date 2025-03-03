@@ -32,6 +32,7 @@ import { convertToSafeJsonKey, extractMermaidChart } from './util/textUtil';
 import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
 import { formatFilenamePrefix } from './util/filenameUtils';
 import type { LanguageOptions } from './util/consts';
+import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
 
 export interface ScribeState {
   isOpen: boolean;
@@ -56,6 +57,7 @@ export interface ScribeOptions {
   scribeOutputLanguage: Exclude<LanguageOptions, 'auto'>;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
   llmModel: LLM_MODELS;
+  activeNoteTemplate: ScribeTemplate;
 }
 
 export default class ScribePlugin extends Plugin {
@@ -144,6 +146,7 @@ export default class ScribePlugin extends Plugin {
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
       transcriptPlatform: this.settings.transcriptPlatform,
       llmModel: this.settings.llmModel,
+      activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
     try {
@@ -185,6 +188,7 @@ export default class ScribePlugin extends Plugin {
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
       transcriptPlatform: this.settings.transcriptPlatform,
       llmModel: this.settings.llmModel,
+      activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
     try {
@@ -416,12 +420,14 @@ export default class ScribePlugin extends Plugin {
     scribeOptions: ScribeOptions,
   ) {
     new Notice('Scribe: 🧠 Sending to LLM to summarize');
+
     const llmSummary = await summarizeTranscript(
       this.settings.openAiApiKey,
       transcript,
       scribeOptions,
       this.settings.llmModel,
     );
+
     new Notice('Scribe: 🧠 LLM summation complete');
 
     return llmSummary;

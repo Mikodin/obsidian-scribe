@@ -88,7 +88,7 @@ async function transcribeAudio(
 export async function summarizeTranscript(
   openAiKey: string,
   transcript: string,
-  { scribeOutputLanguage }: ScribeOptions,
+  { scribeOutputLanguage, activeNoteTemplate }: ScribeOptions,
   llmModel: LLM_MODELS = LLM_MODELS['gpt-4o'],
 ) {
   const systemPrompt = `
@@ -138,7 +138,8 @@ export async function summarizeTranscript(
       ),
   };
 
-  DEFAULT_TEMPLATE.sections.forEach((section) => {
+  console.log('activeNoteTemplate', activeNoteTemplate);
+  activeNoteTemplate.sections.forEach((section) => {
     const { sectionHeader, sectionInstructions, isSectionOptional } = section;
     schema[convertToSafeJsonKey(sectionHeader)] = isSectionOptional
       ? z.string().optional().nullable().describe(sectionInstructions)
