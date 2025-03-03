@@ -51,7 +51,7 @@ const TemplateSection: React.FC<{ section: TemplateSection }> = ({
   section,
 }) => {
   return (
-    <div>
+    <div style={{ width: '100%' }}>
       <SettingsItem
         name="Section Header"
         description=""
@@ -71,10 +71,17 @@ const TemplateSection: React.FC<{ section: TemplateSection }> = ({
       <p>Section Instructions</p>
       <textarea
         value={section.sectionInstructions}
+        rows={3}
         onChange={(e) => {
           // setNoteFilenamePrefix(e.target.value);
           // plugin.settings.noteFilenamePrefix = e.target.value;
           // saveSettings();
+        }}
+        style={{ width: '100%', resize: 'none', overflow: 'hidden' }}
+        onInput={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          target.style.height = 'auto';
+          target.style.height = `${target.scrollHeight}px`;
         }}
       />
       <hr />
@@ -82,26 +89,19 @@ const TemplateSection: React.FC<{ section: TemplateSection }> = ({
   );
 };
 
-export const NoteTemplateSettings: React.FC<{
-  plugin: ScribePlugin;
-  saveSettings: () => void;
-}> = ({ plugin, saveSettings }) => {
-  const [noteTemplates, setNoteTemplates] = useState(
-    plugin.settings.noteTemplates,
-  );
-  const [activeTemplate, setActiveTemplate] = useState(
-    plugin.settings.activeNoteTemplate,
-  );
-
-  useEffect(() => {
-    plugin.settings.noteTemplates = noteTemplates;
-    plugin.settings.activeNoteTemplate = activeTemplate;
-    saveSettings();
-  }, [noteTemplates, activeTemplate, plugin, saveSettings]);
-
+const TemplateControls: React.FC<{
+  noteTemplates: ScribeTemplate[];
+  activeTemplate: ScribeTemplate;
+  setNoteTemplates: (templates: ScribeTemplate[]) => void;
+  setActiveTemplate: (template: ScribeTemplate) => void;
+}> = ({
+  noteTemplates,
+  activeTemplate,
+  setNoteTemplates,
+  setActiveTemplate,
+}) => {
   return (
-    <div>
-      <h2>Templates</h2>
+    <>
       <SettingsItem
         name="Active Template"
         description="Select the active note template"
@@ -209,7 +209,36 @@ export const NoteTemplateSettings: React.FC<{
       >
         Add New Section
       </button>
+    </>
+  );
+};
 
+export const NoteTemplateSettings: React.FC<{
+  plugin: ScribePlugin;
+  saveSettings: () => void;
+}> = ({ plugin, saveSettings }) => {
+  const [noteTemplates, setNoteTemplates] = useState(
+    plugin.settings.noteTemplates,
+  );
+  const [activeTemplate, setActiveTemplate] = useState(
+    plugin.settings.activeNoteTemplate,
+  );
+
+  useEffect(() => {
+    plugin.settings.noteTemplates = noteTemplates;
+    plugin.settings.activeNoteTemplate = activeTemplate;
+    saveSettings();
+  }, [noteTemplates, activeTemplate, plugin, saveSettings]);
+
+  return (
+    <div>
+      <h2>Templates</h2>
+      <TemplateControls
+        noteTemplates={noteTemplates}
+        activeTemplate={activeTemplate}
+        setNoteTemplates={setNoteTemplates}
+        setActiveTemplate={setActiveTemplate}
+      />
       {activeTemplate.sections.map((section) => (
         <TemplateSection key={section.sectionHeader} section={section} />
       ))}
