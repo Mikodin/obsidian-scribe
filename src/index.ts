@@ -342,7 +342,12 @@ export default class ScribePlugin extends Plugin {
     );
 
     activeNoteTemplate.sections.forEach(async (section) => {
-      const { sectionHeader, sectionOutputPrefix, isSectionOptional } = section;
+      const {
+        sectionHeader,
+        sectionOutputPrefix,
+        sectionOutputPostfix,
+        isSectionOptional,
+      } = section;
       const sectionKey = convertToSafeJsonKey(sectionHeader);
       const sectionValue = llmSummary[sectionKey];
 
@@ -350,12 +355,10 @@ export default class ScribePlugin extends Plugin {
         return;
       }
 
-      if (sectionOutputPrefix) {
-        await appendTextToNote(
-          this,
-          note,
-          `## ${sectionHeader}\n${sectionOutputPrefix}\n${sectionValue}\n\`\`\``,
-        );
+      if (sectionOutputPrefix || sectionOutputPostfix) {
+        const textToAppend = `## ${sectionHeader}\n${sectionOutputPrefix || ''}\n${sectionValue}\n${sectionOutputPostfix || ''}`;
+
+        await appendTextToNote(this, note, textToAppend);
 
         return;
       }

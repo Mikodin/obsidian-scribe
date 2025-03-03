@@ -12,6 +12,7 @@ export interface TemplateSection {
   sectionInstructions: string;
   isSectionOptional?: boolean;
   sectionOutputPrefix?: string;
+  sectionOutputPostfix?: string; // Added property
 }
 
 export const DEFAULT_TEMPLATE: ScribeTemplate = {
@@ -36,6 +37,7 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
       id: '3',
       sectionHeader: 'Mermaid Chart',
       sectionOutputPrefix: '```mermaid',
+      sectionOutputPostfix: '```',
       sectionInstructions: `A valid unicode mermaid chart that shows a concept map consisting of both what insights you had along with what the speaker said for the mermaid chart, 
         Dont wrap it in anything, just output the mermaid chart.  
         Do not use any special characters that arent letters in the nodes text, particularly new lines, tabs, or special characters like apostraphes or quotes or commas`,
@@ -94,6 +96,58 @@ const TemplateSection: React.FC<{
           target.style.height = `${target.scrollHeight}px`;
         }}
       />
+
+      <SettingsItem
+        name="Section Optional"
+        description="Is this section optional?"
+        control={
+          <input
+            type="checkbox"
+            checked={section.isSectionOptional || false}
+            onChange={(e) => {
+              updateSection({
+                ...section,
+                isSectionOptional: e.target.checked,
+              });
+            }}
+          />
+        }
+      />
+
+      <SettingsItem
+        name="Section Output Prefix"
+        description="Prefix for the section output"
+        control={
+          <input
+            type="text"
+            value={section.sectionOutputPrefix || ''}
+            onChange={(e) => {
+              updateSection({
+                ...section,
+                sectionOutputPrefix: e.target.value,
+              });
+            }}
+          />
+        }
+      />
+
+      <SettingsItem
+        name="Section Output Postfix"
+        description="Postfix for the section output"
+        control={
+          <input
+            type="text"
+            value={section.sectionOutputPostfix || ''}
+            onChange={(e) => {
+              updateSection({
+                ...section,
+                sectionOutputPostfix: e.target.value,
+              });
+            }}
+          />
+        }
+      />
+
       <hr />
     </div>
   );
