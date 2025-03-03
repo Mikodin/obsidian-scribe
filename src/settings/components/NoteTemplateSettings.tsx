@@ -1,6 +1,7 @@
-import type ScribePlugin from 'src';
-import { SettingsItem } from './SettingsItem';
 import { useEffect, useState } from 'react';
+
+import { SettingsItem } from './SettingsItem';
+import type ScribePlugin from 'src';
 
 export interface ScribeTemplate {
   name: string;
@@ -284,7 +285,7 @@ const TemplateControls: React.FC<{
         type="button"
         onClick={() => {
           const newSection: TemplateSection = {
-            id: crypto.randomUUID(),
+            id: Math.random().toString(36).substring(2, 9),
             sectionHeader: 'New Section',
             sectionInstructions: 'New Section Instructions',
           };
