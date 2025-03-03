@@ -66,6 +66,13 @@ const TemplateSection: React.FC<{
     setActiveTemplate({ ...activeTemplate, sections: updatedSections });
   };
 
+  const removeSection = () => {
+    const updatedSections = activeTemplate.sections.filter(
+      (sec) => sec.id !== section.id,
+    );
+    setActiveTemplate({ ...activeTemplate, sections: updatedSections });
+  };
+
   return (
     <div style={{ width: '100%' }}>
       <SettingsItem
@@ -147,6 +154,10 @@ const TemplateSection: React.FC<{
           />
         }
       />
+
+      <button type="button" onClick={removeSection}>
+        Remove Section
+      </button>
 
       <hr />
     </div>
