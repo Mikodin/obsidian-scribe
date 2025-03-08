@@ -59,7 +59,8 @@ const TemplateSection: React.FC<{
   section: TemplateSection;
   activeTemplate: ScribeTemplate;
   setActiveTemplate: (template: ScribeTemplate) => void;
-}> = ({ section, activeTemplate, setActiveTemplate }) => {
+  isTemplateLocked: boolean;
+}> = ({ section, activeTemplate, setActiveTemplate, isTemplateLocked }) => {
   const updateSection = (updatedSection: TemplateSection) => {
     const updatedSections = activeTemplate.sections.map((sec) =>
       sec.sectionHeader === section.sectionHeader ? updatedSection : sec,
@@ -81,6 +82,7 @@ const TemplateSection: React.FC<{
         description=""
         control={
           <input
+            disabled={isTemplateLocked}
             type="text"
             value={section.sectionHeader}
             onChange={(e) => {
@@ -92,6 +94,7 @@ const TemplateSection: React.FC<{
 
       <p>Section Instructions</p>
       <textarea
+        disabled={isTemplateLocked}
         value={section.sectionInstructions}
         onChange={(e) => {
           updateSection({ ...section, sectionInstructions: e.target.value });
@@ -117,6 +120,7 @@ const TemplateSection: React.FC<{
         description='Marks the section as optional - for example "Ask Scribe"'
         control={
           <input
+            disabled={isTemplateLocked}
             type="checkbox"
             checked={Boolean(section.isSectionOptional)}
             onChange={(e) => {
@@ -134,6 +138,7 @@ const TemplateSection: React.FC<{
         description="Prefix for the section output - this is useful for code blocks"
         control={
           <input
+            disabled={isTemplateLocked}
             type="text"
             value={section.sectionOutputPrefix || ''}
             onChange={(e) => {
@@ -151,6 +156,7 @@ const TemplateSection: React.FC<{
         description="Postfix for the section output - this is useful for codeblocks"
         control={
           <input
+            disabled={isTemplateLocked}
             type="text"
             value={section.sectionOutputPostfix || ''}
             onChange={(e) => {
@@ -163,7 +169,7 @@ const TemplateSection: React.FC<{
         }
       />
 
-      <button type="button" onClick={removeSection}>
+      <button type="button" onClick={removeSection} disabled={isTemplateLocked}>
         Remove Section
       </button>
 
@@ -177,11 +183,13 @@ const TemplateControls: React.FC<{
   activeTemplate: ScribeTemplate;
   setNoteTemplates: (templates: ScribeTemplate[]) => void;
   setActiveTemplate: (template: ScribeTemplate) => void;
+  isTemplateLocked: boolean;
 }> = ({
   noteTemplates,
   activeTemplate,
   setNoteTemplates,
   setActiveTemplate,
+  isTemplateLocked,
 }) => {
   return (
     <>
@@ -204,7 +212,8 @@ const TemplateControls: React.FC<{
           >
             {noteTemplates.map((template) => (
               <option key={template.name} value={template.name}>
-                {template.name}
+                {template.name}{' '}
+                {template.name === DEFAULT_TEMPLATE.name ? '(Locked)' : ''}
               </option>
             ))}
           </select>
@@ -241,6 +250,7 @@ const TemplateControls: React.FC<{
       </button>
 
       <button
+        disabled={isTemplateLocked}
         type="button"
         onClick={() => {
           const updatedTemplates = noteTemplates.filter(
@@ -259,6 +269,7 @@ const TemplateControls: React.FC<{
         description="Change the name of the active template"
         control={
           <input
+            disabled={isTemplateLocked}
             type="text"
             value={activeTemplate.name}
             onChange={(e) => {
@@ -283,6 +294,7 @@ const TemplateControls: React.FC<{
 
       <button
         type="button"
+        disabled={isTemplateLocked}
         onClick={() => {
           const newSection: TemplateSection = {
             id: Math.random().toString(36).substring(2, 9),
@@ -323,6 +335,7 @@ export const NoteTemplateSettings: React.FC<{
   const [activeTemplate, setActiveTemplate] = useState(
     plugin.settings.activeNoteTemplate,
   );
+  const isTemplateLocked = activeTemplate.name === DEFAULT_TEMPLATE.name;
 
   useEffect(() => {
     plugin.settings.noteTemplates = noteTemplates;
@@ -338,6 +351,7 @@ export const NoteTemplateSettings: React.FC<{
         activeTemplate={activeTemplate}
         setNoteTemplates={setNoteTemplates}
         setActiveTemplate={setActiveTemplate}
+        isTemplateLocked={isTemplateLocked}
       />
       {activeTemplate.sections.map((section) => (
         <TemplateSection
@@ -345,6 +359,7 @@ export const NoteTemplateSettings: React.FC<{
           section={section}
           activeTemplate={activeTemplate}
           setActiveTemplate={setActiveTemplate}
+          isTemplateLocked={isTemplateLocked}
         />
       ))}
     </div>
