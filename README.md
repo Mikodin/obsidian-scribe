@@ -9,13 +9,13 @@ Forgot a phrase or concept while recording?  Ask "Hey Scribe" followed by a ques
 ![obsidian-scribe-screenshots](https://github.com/user-attachments/assets/79eb4427-799a-47ba-8024-4d1350ac47cf)
 
 ## 🌟 Key Features
-- **Multi Language Support:** Select your language and go wild!
 - **Voice-to-Text Magic:** Begin recording and watch as your voice notes are transcribed, summarized, and turned into actionable insights.
-- **Interactive Queries:** Ask questions mid-recording, and Scribe fetches the answers, integrating them directly into your notes.
-- **Mermaid Chart Creation:** Visualize your thoughts and summaries with automatically generated Mermaid charts, providing a unique perspective on your notes.
 - **Robust on Failure:** Designed with mobile users in mind, Scribe ensures that no step in the process is a single point of failure. Record, transcribe, and summarize on the go, with each step saved progressively. (WIP)
 - **Seamless Integration:** Utilizes AssemblyAI or OpenAI Whisper for top-tier transcription accuracy and OpenAI for cutting-edge summarization
-
+- **Create your custom templates:** Harness the language models and insert your own custom prompts as template!
+- **Multi Language Support:** Select your language and go wild!
+- **Interactive Queries:** Ask questions mid-recording, and Scribe fetches the answers, integrating them directly into your notes.
+- **Mermaid Chart Creation:** Visualize your thoughts and summaries with automatically generated Mermaid charts, providing a unique perspective on your notes.
 ## 🕹️ Commands
 ### From the Ribbon button
 - Either Click Start Recording or Open the Controls Modal
