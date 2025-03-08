@@ -93,7 +93,7 @@ export function ModalRecordingOptions({
       )}
 
       <SettingsItem
-        name="Note Template"
+        name="Active template"
         description=""
         control={
           <select

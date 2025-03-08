@@ -17,7 +17,7 @@ export interface TemplateSection {
 }
 
 export const DEFAULT_TEMPLATE: ScribeTemplate = {
-  name: 'Default Template',
+  name: 'Scribe',
   sections: [
     {
       id: '1',
@@ -49,7 +49,7 @@ Do not use any special characters that arent letters in the nodes text, particul
       isSectionOptional: true,
       sectionInstructions: `If the user says "Hey Scribe" or alludes to you, asking you to do something, answer the question or do the ask and put the answers here
 Put the text in markdown, it will be nested under an h2 tag, so use a tag less than that for headers
-Summarize the question in a short sentence as a header and format place your reply nicely below for as many questions as there are
+Summarize the question in a short sentence as a header and place your reply nicely below for as many questions as there are
 Answer their questions in a clear and concise manner`,
     },
   ],
@@ -114,11 +114,11 @@ const TemplateSection: React.FC<{
 
       <SettingsItem
         name="Section Optional"
-        description="Is this section optional?"
+        description='Marks the section as optional - for example "Ask Scribe"'
         control={
           <input
             type="checkbox"
-            checked={section.isSectionOptional || false}
+            checked={Boolean(section.isSectionOptional)}
             onChange={(e) => {
               updateSection({
                 ...section,
@@ -131,7 +131,7 @@ const TemplateSection: React.FC<{
 
       <SettingsItem
         name="Section Output Prefix"
-        description="Prefix for the section output"
+        description="Prefix for the section output - this is useful for code blocks"
         control={
           <input
             type="text"
@@ -148,7 +148,7 @@ const TemplateSection: React.FC<{
 
       <SettingsItem
         name="Section Output Postfix"
-        description="Postfix for the section output"
+        description="Postfix for the section output - this is useful for codeblocks"
         control={
           <input
             type="text"
@@ -187,7 +187,7 @@ const TemplateControls: React.FC<{
     <>
       <SettingsItem
         name="Active Template"
-        description="Select the active note template"
+        description="Select the active note template - this will be auto selected in the modal"
         control={
           <select
             value={activeTemplate.name}
@@ -308,6 +308,7 @@ const TemplateControls: React.FC<{
       >
         Add New Section
       </button>
+      <hr />
     </>
   );
 };
