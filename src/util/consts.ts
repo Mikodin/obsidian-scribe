@@ -7,9 +7,6 @@ export enum RECORDING_STATUS {
 export enum LanguageOptions {
   auto = 'auto',
   en = 'en',
-  en_au = 'en_au',
-  en_uk = 'en_uk',
-  en_us = 'en_us',
   es = 'es',
   fr = 'fr',
   de = 'de',
@@ -33,9 +30,6 @@ export type OutputLanguageOptions = Exclude<LanguageOptions, 'auto'>;
 export const LanguageDisplayNames: { [key in LanguageOptions]: string } = {
   [LanguageOptions.auto]: 'Auto Detect',
   [LanguageOptions.en]: 'English',
-  [LanguageOptions.en_au]: 'English (Australia)',
-  [LanguageOptions.en_uk]: 'English (UK)',
-  [LanguageOptions.en_us]: 'English (US)',
   [LanguageOptions.es]: 'Spanish',
   [LanguageOptions.fr]: 'French',
   [LanguageOptions.de]: 'German',
