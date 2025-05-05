@@ -4,6 +4,7 @@ import { SettingsItem } from './SettingsItem';
 import type ScribePlugin from 'src';
 
 export interface ScribeTemplate {
+  id: string;
   name: string;
   sections: TemplateSection[];
 }
@@ -17,6 +18,7 @@ export interface TemplateSection {
 }
 
 export const DEFAULT_TEMPLATE: ScribeTemplate = {
+  id: 'default',
   name: 'Scribe',
   sections: [
     {
@@ -60,11 +62,39 @@ const TemplateSection: React.FC<{
   activeTemplate: ScribeTemplate;
   setActiveTemplate: (template: ScribeTemplate) => void;
   isTemplateLocked: boolean;
-}> = ({ section, activeTemplate, setActiveTemplate, isTemplateLocked }) => {
+  setNoteTemplates: (templates: ScribeTemplate[]) => void;
+  noteTemplates: ScribeTemplate[];
+}> = ({
+  section,
+  activeTemplate,
+  setActiveTemplate,
+  isTemplateLocked,
+  setNoteTemplates,
+  noteTemplates,
+}) => {
   const updateSection = (updatedSection: TemplateSection) => {
     const updatedSections = activeTemplate.sections.map((sec) =>
       sec.sectionHeader === section.sectionHeader ? updatedSection : sec,
     );
+
+    const updatedNoteTemplates = noteTemplates.map((template) => {
+      // Fill the id if it is not set
+      if (!template.id) {
+        template.id = Math.random().toString(36).substring(2, 9);
+      }
+
+      const isUpdatedTemplate =
+        template.id === activeTemplate.id ||
+        template.name === activeTemplate.name;
+
+      if (isUpdatedTemplate) {
+        return { ...template, sections: updatedSections };
+      }
+
+      return template;
+    });
+
+    setNoteTemplates(updatedNoteTemplates);
     setActiveTemplate({ ...activeTemplate, sections: updatedSections });
   };
 
@@ -223,6 +253,7 @@ const TemplateControls: React.FC<{
         type="button"
         onClick={() => {
           const newTemplate: ScribeTemplate = {
+            id: Math.random().toString(36).substring(2, 9),
             name: Date.now().toString(),
             sections: [],
           };
@@ -359,6 +390,8 @@ export const NoteTemplateSettings: React.FC<{
           section={section}
           activeTemplate={activeTemplate}
           setActiveTemplate={setActiveTemplate}
+          setNoteTemplates={setNoteTemplates}
+          noteTemplates={noteTemplates}
           isTemplateLocked={isTemplateLocked}
         />
       ))}
