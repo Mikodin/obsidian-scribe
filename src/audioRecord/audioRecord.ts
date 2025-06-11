@@ -5,6 +5,8 @@
  */
 
 import { Notice } from 'obsidian';
+import { fixWebmDuration } from '@fix-webm-duration/fix';
+
 import {
   mimeTypeToFileExtension,
   pickMimeType,
@@ -15,6 +17,7 @@ export class AudioRecord {
   mediaRecorder: MediaRecorder | null;
   data: BlobPart[] = [];
   fileExtension: string;
+  startTime: number | null = null;
 
   private mimeType: SupportedMimeType = pickMimeType('audio/webm; codecs=opus');
   private bitRate = 32000;
@@ -29,6 +32,7 @@ export class AudioRecord {
       .then((stream) => {
         this.mediaRecorder = this.setupMediaRecorder(stream);
         this.mediaRecorder.start();
+        this.startTime = Date.now();
       })
       .catch((err) => {
         new Notice('Scribe: Failed to access the microphone');
@@ -68,23 +72,38 @@ export class AudioRecord {
   }
 
   stopRecording() {
-    return new Promise<Blob>((resolve) => {
+    return new Promise<Blob>((resolve, reject) => {
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
-        console.error('There is no mediaRecorder, cannot stopRecording');
-        throw new Error('There is no mediaRecorder, cannot stopRecording');
+        const err = new Error(
+          'There is no mediaRecorder, cannot stopRecording',
+        );
+        console.error(err.message);
+        reject(err);
+        return;
       }
 
-      this.mediaRecorder.onstop = () => {
-        this.mediaRecorder?.stream.getTracks().forEach((track) => track.stop()); // stop the stream tracks
+      this.mediaRecorder.onstop = async () => {
+        try {
+          this.mediaRecorder?.stream
+            .getTracks()
+            .forEach((track) => track.stop());
 
-        const blob = new Blob(this.data, {
-          type: this.mimeType,
-        });
+          if (this.data.length === 0) {
+            throw new Error('No audio data recorded.');
+          }
 
-        this.data = [];
-        this.mediaRecorder = null;
+          const blob = new Blob(this.data, { type: this.mimeType });
+          const duration = (this.startTime && Date.now() - this.startTime) || 0;
+          const fixedBlob = await fixWebmDuration(blob, duration, {});
 
-        resolve(blob);
+          this.mediaRecorder = null;
+          this.startTime = null;
+
+          resolve(fixedBlob);
+        } catch (err) {
+          console.log('Error during recording stop:', err);
+          reject(err);
+        }
       };
 
       this.mediaRecorder.stop();

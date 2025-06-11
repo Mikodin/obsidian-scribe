@@ -25,6 +25,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@fix-webm-duration/fix": "^1.0.1",
     "@langchain/core": "^0.3.40",
     "@langchain/openai": "^0.5.10",
     "assemblyai": "^4.9.0",
