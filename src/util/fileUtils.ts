@@ -97,8 +97,11 @@ export async function setupFileFrontmatter(
         source: audioFile
           ? [...(frontMatter.source || []), `[[${audioFile.path}]]`]
           : frontMatter.source,
-        created_by: '[[Scribe]]',
       };
+
+      if (plugin.settings.isFrontMatterLinkToScribe) {
+        newFrontMatter.created_by = '[[Scribe]]';
+      }
 
       Object.assign(frontMatter, newFrontMatter);
     });

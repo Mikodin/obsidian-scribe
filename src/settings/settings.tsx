@@ -36,6 +36,7 @@ export interface ScribePluginSettings {
   scribeOutputLanguage: OutputLanguageOptions;
   activeNoteTemplate: ScribeTemplate;
   noteTemplates: ScribeTemplate[];
+  isFrontMatterLinkToScribe: boolean;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -55,6 +56,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   scribeOutputLanguage: LanguageOptions.en,
   activeNoteTemplate: DEFAULT_TEMPLATE,
   noteTemplates: [DEFAULT_TEMPLATE],
+  isFrontMatterLinkToScribe: true,
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -166,6 +168,19 @@ export class ScribeSettingsTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.isOnlyTranscribeActive);
         toggle.onChange(async (value) => {
           this.plugin.settings.isOnlyTranscribeActive = value;
+          await this.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('Link to Scribe in "created_by" frontmatter')
+      .setDesc(
+        'If true, we will add a link to the Scribe in the frontmatter of the note.  This is useful for knowing which notes were created by Scribe.',
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.isFrontMatterLinkToScribe);
+        toggle.onChange(async (value) => {
+          this.plugin.settings.isFrontMatterLinkToScribe = value;
           await this.saveSettings();
         });
       });
