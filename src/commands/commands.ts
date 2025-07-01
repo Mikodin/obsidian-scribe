@@ -4,7 +4,7 @@ import { ScribeControlsModal } from 'src/modal/scribeControlsModal';
 export function handleCommands(plugin: ScribePlugin) {
   plugin.addCommand({
     id: 'scribe-recording-modal',
-    name: 'Open Recording Modal',
+    name: 'Open recording modal',
     callback: () => {
       plugin.state.isOpen = true;
       new ScribeControlsModal(plugin).open();
@@ -12,7 +12,7 @@ export function handleCommands(plugin: ScribePlugin) {
   });
   plugin.addCommand({
     id: 'scribe-recording-toggle-recording',
-    name: 'Start / Stop recording',
+    name: 'Start/Stop recording',
     callback: () => {
       const isRecordingInProgress =
         plugin.state.audioRecord?.mediaRecorder?.state === 'recording';
