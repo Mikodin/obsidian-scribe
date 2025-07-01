@@ -138,7 +138,7 @@ export default class ScribePlugin extends Plugin {
 
   async scribe(
     scribeOptions: ScribeOptions = {
-      isAppendToActiveFile: false,
+      isAppendToActiveFile: this.settings.isAppendToActiveFile,
       isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
@@ -180,7 +180,7 @@ export default class ScribePlugin extends Plugin {
   async scribeExistingFile(
     audioFile: TFile,
     scribeOptions: ScribeOptions = {
-      isAppendToActiveFile: false,
+      isAppendToActiveFile: this.settings.isAppendToActiveFile,
       isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,

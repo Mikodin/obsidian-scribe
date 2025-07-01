@@ -38,6 +38,7 @@ export interface ScribePluginSettings {
   dateFilenameFormat: string;
   isSaveAudioFileActive: boolean;
   isOnlyTranscribeActive: boolean;
+  isAppendToActiveFile: boolean;
   audioFileLanguage: LanguageOptions;
   scribeOutputLanguage: OutputLanguageOptions;
   activeNoteTemplate: ScribeTemplate;
@@ -58,6 +59,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   dateFilenameFormat: 'YYYY-MM-DD',
   isSaveAudioFileActive: true,
   isOnlyTranscribeActive: false,
+  isAppendToActiveFile: false,
   audioFileLanguage: LanguageOptions.auto,
   scribeOutputLanguage: LanguageOptions.en,
   activeNoteTemplate: DEFAULT_TEMPLATE,
@@ -181,6 +183,19 @@ export class ScribeSettingsTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.isOnlyTranscribeActive);
         toggle.onChange(async (value) => {
           this.plugin.settings.isOnlyTranscribeActive = value;
+          await this.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('Append to active file by default')
+      .setDesc(
+        'If true, the default behavior will be to append the transcription to the active file. If false, it will create a new note with the transcription.',
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.isAppendToActiveFile);
+        toggle.onChange(async (value) => {
+          this.plugin.settings.isAppendToActiveFile = value;
           await this.saveSettings();
         });
       });

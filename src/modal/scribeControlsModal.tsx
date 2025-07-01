@@ -53,7 +53,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     number | null
   >(null);
   const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
-    isAppendToActiveFile: false,
+    isAppendToActiveFile: plugin.settings.isAppendToActiveFile,
     isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
     isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
     isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
