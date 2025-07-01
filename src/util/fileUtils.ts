@@ -1,16 +1,24 @@
 import { normalizePath, type TFile } from 'obsidian';
 
 import type ScribePlugin from 'src';
+import { OBSIDIAN_PATHS } from 'src/settings/settings';
+import { getDefaultPathSettings } from './pathUtils';
 
 export async function saveAudioRecording(
   plugin: ScribePlugin,
   recordingBuffer: ArrayBuffer,
   baseFileName: string,
 ) {
-  const pathToSave = plugin.settings.recordingDirectory;
+  const defaultPaths = await getDefaultPathSettings(plugin);
+  const pathToSave =
+    plugin.settings.recordingDirectory === OBSIDIAN_PATHS.resourceFolder
+      ? defaultPaths.defaultNewResourcePath
+      : plugin.settings.recordingDirectory;
   let fullPath = normalizePath(
     `${pathToSave}/${baseFileName}.${plugin.state.audioRecord?.fileExtension}`,
   );
+
+  console.log('Saving audio to path:', fullPath);
 
   const fileAlreadyExists = await plugin.app.vault.adapter.exists(
     fullPath,
@@ -37,9 +45,16 @@ export async function createNewNote(
   fileName: string,
 ): Promise<TFile> {
   try {
-    const pathToSave = plugin.settings.transcriptDirectory;
+    const defaultPaths = await getDefaultPathSettings(plugin);
+    const pathToSave =
+      plugin.settings.transcriptDirectory === OBSIDIAN_PATHS.noteFolder
+        ? defaultPaths.defaultNewFilePath
+        : plugin.settings.transcriptDirectory;
+
     const fullPath = `${pathToSave}/${fileName}.md`;
     let notePath = normalizePath(fullPath);
+
+    console.log('Saving note to path:', notePath);
 
     const fileAlreadyExists = await plugin.app.vault.adapter.exists(
       notePath,

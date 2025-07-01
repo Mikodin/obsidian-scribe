@@ -14,10 +14,16 @@ import {
   type ScribeTemplate,
   NoteTemplateSettings,
 } from './components/NoteTemplateSettings';
+import { getDefaultPathSettings } from 'src/util/pathUtils';
 
 export enum TRANSCRIPT_PLATFORM {
   assemblyAi = 'assemblyAi',
   openAi = 'openAi',
+}
+
+export enum OBSIDIAN_PATHS {
+  noteFolder = 'matchObsidianNoteFolder',
+  resourceFolder = 'matchObsidianResourceFolder',
 }
 export interface ScribePluginSettings {
   assemblyAiApiKey: string;
@@ -42,8 +48,8 @@ export interface ScribePluginSettings {
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
   assemblyAiApiKey: '',
   openAiApiKey: '',
-  recordingDirectory: '',
-  transcriptDirectory: '',
+  recordingDirectory: OBSIDIAN_PATHS.resourceFolder,
+  transcriptDirectory: OBSIDIAN_PATHS.noteFolder,
   transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
   isMultiSpeakerEnabled: false,
   llmModel: LLM_MODELS['gpt-4o'],
@@ -116,6 +122,10 @@ export class ScribeSettingsTab extends PluginSettingTab {
       .setDesc('Defaults to your resources folder')
       .addDropdown((component) => {
         component.addOption('', 'Vault folder');
+        component.addOption(
+          OBSIDIAN_PATHS.resourceFolder,
+          'Obsidian resource folder',
+        );
         for (const folder of foldersInVault) {
           const folderName = folder.path ? folder.path : 'Vault Folder';
           component.addOption(folder.path, folderName);
@@ -131,8 +141,11 @@ export class ScribeSettingsTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Directory for transcripts')
       .setDesc('Defaults to your new note folder')
-      .addDropdown((component) => {
+      .addDropdown(async (component) => {
+        const defaultPathSettings = await getDefaultPathSettings(this.plugin);
+
         component.addOption('', 'Vault folder');
+        component.addOption(OBSIDIAN_PATHS.noteFolder, 'Obsidian note folder');
         for (const folder of foldersInVault) {
           const folderName = folder.path === '' ? 'Vault Folder' : folder.path;
           component.addOption(folder.path, folderName);
