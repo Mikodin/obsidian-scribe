@@ -30,6 +30,7 @@ export async function transcribeAudioWithAssemblyAi(
     : baseParams;
 
   const transcript = await client.transcripts.transcribe(params);
+
   let formattedParagraphs: TranscriptParagraph[] | undefined;
   try {
     const { paragraphs } = await client.transcripts.paragraphs(transcript.id);
