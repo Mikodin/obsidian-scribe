@@ -308,8 +308,10 @@ export default class ScribePlugin extends Plugin {
 
     await this.cleanup();
 
-    const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
-    this.app.workspace.openLinkText(note?.path, currentPath, true);
+    if (!isAppendToActiveFile) {
+      const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
+      this.app.workspace.openLinkText(note?.path, currentPath, true);
+    }
 
     await appendTextToNote(this, note, '# Transcript in progress');
 
