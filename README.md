@@ -33,6 +33,8 @@ Get your key here - [Open AI Developer Console - https://platform.openai.com/set
 
 Get your key in the  [AssemblyAI Dev Console https://www.assemblyai.com/app/account](https://www.assemblyai.com/app/account)
 
+- **Audio Input Device:** Select which microphone to use for recording. By default, the system's default audio input device will be used.
+
 ## 🚀 Getting Started
 
 ### Installation

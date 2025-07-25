@@ -8,6 +8,7 @@ import { LLM_MODELS } from 'src/util/openAiUtils';
 
 import { FileNameSettings } from './components/FileNameSettings';
 import { AiModelSettings } from './components/AiModelSettings';
+import { AudioDeviceSettings } from './components/AudioDeviceSettings';
 import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
 import {
   DEFAULT_TEMPLATE,
@@ -44,6 +45,7 @@ export interface ScribePluginSettings {
   activeNoteTemplate: ScribeTemplate;
   noteTemplates: ScribeTemplate[];
   isFrontMatterLinkToScribe: boolean;
+  selectedAudioDeviceId: string;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -65,6 +67,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   activeNoteTemplate: DEFAULT_TEMPLATE,
   noteTemplates: [DEFAULT_TEMPLATE],
   isFrontMatterLinkToScribe: true,
+  selectedAudioDeviceId: '',
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -247,6 +250,7 @@ const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
 
   return (
     <div>
+      <AudioDeviceSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <AiModelSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <FileNameSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <NoteTemplateSettings

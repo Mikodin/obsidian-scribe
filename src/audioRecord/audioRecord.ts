@@ -26,9 +26,13 @@ export class AudioRecord {
     this.fileExtension = mimeTypeToFileExtension(this.mimeType);
   }
 
-  async startRecording() {
+  async startRecording(deviceId?: string) {
+    const audioConstraints = deviceId && deviceId !== '' 
+      ? { deviceId: { exact: deviceId } }
+      : true;
+
     navigator.mediaDevices
-      .getUserMedia({ audio: true })
+      .getUserMedia({ audio: audioConstraints })
       .then((stream) => {
         this.mediaRecorder = this.setupMediaRecorder(stream);
         this.mediaRecorder.start();
