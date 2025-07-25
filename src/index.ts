@@ -116,7 +116,7 @@ export default class ScribePlugin extends Plugin {
     const newRecording = new AudioRecord();
     this.state.audioRecord = newRecording;
 
-    newRecording.startRecording();
+    newRecording.startRecording(this.settings.selectedAudioDeviceId);
   }
 
   async handlePauseResumeRecording() {
