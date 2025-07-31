@@ -8,6 +8,7 @@ import { LLM_MODELS } from 'src/util/openAiUtils';
 
 import { FileNameSettings } from './components/FileNameSettings';
 import { AiModelSettings } from './components/AiModelSettings';
+import { AudioDeviceSettings } from './components/AudioDeviceSettings';
 import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
 import {
   DEFAULT_TEMPLATE,
@@ -44,6 +45,8 @@ export interface ScribePluginSettings {
   activeNoteTemplate: ScribeTemplate;
   noteTemplates: ScribeTemplate[];
   isFrontMatterLinkToScribe: boolean;
+  selectedAudioDeviceId: string;
+  audioFileFormat: 'webm' | 'mp3';
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -65,6 +68,8 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   activeNoteTemplate: DEFAULT_TEMPLATE,
   noteTemplates: [DEFAULT_TEMPLATE],
   isFrontMatterLinkToScribe: true,
+  selectedAudioDeviceId: '',
+  audioFileFormat: 'webm',
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -173,6 +178,22 @@ export class ScribeSettingsTab extends PluginSettingTab {
           await this.saveSettings();
         });
       });
+      
+    new Setting(containerEl)
+      .setName('Audio file format')
+      .setDesc(
+        'Choose the format for saving audio recordings. MP3 format will be converted from WebM on the client side.',
+      )
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption('webm', 'WebM')
+          .addOption('mp3', 'MP3')
+          .setValue(this.plugin.settings.audioFileFormat)
+          .onChange(async (value: 'webm' | 'mp3') => {
+            this.plugin.settings.audioFileFormat = value;
+            await this.saveSettings();
+          });
+      });
 
     new Setting(containerEl)
       .setName('Only transcribe recording')
@@ -247,6 +268,7 @@ const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
 
   return (
     <div>
+      <AudioDeviceSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <AiModelSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <FileNameSettings plugin={plugin} saveSettings={debouncedSaveSettings} />
       <NoteTemplateSettings
