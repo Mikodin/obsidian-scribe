@@ -57,6 +57,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
     isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
     isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
+    isDisableLlmTranscription: plugin.settings.isDisableLlmTranscription,
     audioFileLanguage: plugin.settings.audioFileLanguage,
     scribeOutputLanguage: plugin.settings.scribeOutputLanguage,
     transcriptPlatform: plugin.settings.transcriptPlatform,

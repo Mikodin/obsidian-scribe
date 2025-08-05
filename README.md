@@ -33,6 +33,12 @@ Get your key here - [Open AI Developer Console - https://platform.openai.com/set
 
 Get your key in the  [AssemblyAI Dev Console https://www.assemblyai.com/app/account](https://www.assemblyai.com/app/account)
 
+- **Audio Input Device:** Select which microphone to use for recording. By default, the system's default audio input device will be used.
+
+- **Audio File Format:** Choose between WebM and MP3 formats for saving audio recordings. MP3 format will be converted from WebM on the client side.
+
+- **Disable LLM Transcription:** If enabled, audio will not be sent to any LLM for transcription, providing privacy when needed.
+
 ## 🚀 Getting Started
 
 ### Installation
