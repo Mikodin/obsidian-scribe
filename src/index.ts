@@ -53,6 +53,7 @@ export interface ScribeOptions {
   isOnlyTranscribeActive: boolean;
   isSaveAudioFileActive: boolean;
   isMultiSpeakerEnabled: boolean;
+  isDisableLlmTranscription: boolean;
   audioFileLanguage: LanguageOptions;
   scribeOutputLanguage: Exclude<LanguageOptions, 'auto'>;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
@@ -142,6 +143,7 @@ export default class ScribePlugin extends Plugin {
       isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
+      isDisableLlmTranscription: this.settings.isDisableLlmTranscription,
       audioFileLanguage: this.settings.audioFileLanguage,
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
       transcriptPlatform: this.settings.transcriptPlatform,
@@ -184,6 +186,7 @@ export default class ScribePlugin extends Plugin {
       isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
       isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
       isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
+      isDisableLlmTranscription: this.settings.isDisableLlmTranscription,
       audioFileLanguage: this.settings.audioFileLanguage,
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
       transcriptPlatform: this.settings.transcriptPlatform,
@@ -313,7 +316,7 @@ export default class ScribePlugin extends Plugin {
       this.app.workspace.openLinkText(note?.path, currentPath, true);
     }
 
-    await appendTextToNote(this, note, '# Transcript in progress');
+    await appendTextToNote(this, note, '# Audio in progress');
 
     const transcript = await this.handleTranscription(
       audioRecordingBuffer,
@@ -321,12 +324,12 @@ export default class ScribePlugin extends Plugin {
     );
 
     const inProgressHeaderToReplace = isAppendToActiveFile
-      ? '# Transcript in progress'
-      : '\n# Transcript in progress';
+      ? '# Audio in progress'
+      : '\n# Audio in progress';
 
     const transcriptTextToAppendToNote = isSaveAudioFileActive
-      ? `# Transcript\n![[${audioRecordingFile.path}]]\n${transcript}`
-      : `# Transcript\n${transcript}`;
+      ? `# Audio\n![[${audioRecordingFile.path}]]\n${transcript}`
+      : `# Audio\n${transcript}`;
     await appendTextToNote(
       this,
       note,
@@ -388,6 +391,13 @@ export default class ScribePlugin extends Plugin {
     scribeOptions: ScribeOptions,
   ) {
     try {
+      if (this.settings.isDisableLlmTranscription) {
+        new Notice(
+          `Scribe: 🎧 Transcription is disabled in settings`,
+        );
+        return "";
+      }
+      
       new Notice(
         `Scribe: 🎧 Beginning transcription w/ ${this.settings.transcriptPlatform}`,
       );

@@ -22,6 +22,9 @@ export const AiModelSettings: React.FC<{
   const [isMultiSpeakerEnabled, setIsMultiSpeakerEnabled] = useState(
     plugin.settings.isMultiSpeakerEnabled,
   );
+  const [isDisableLlmTranscription, setIsDisableLlmTranscription] = useState(
+    plugin.settings.isDisableLlmTranscription,
+  );
 
   const handleToggleMultiSpeaker = () => {
     const value = !isMultiSpeakerEnabled;
@@ -29,10 +32,41 @@ export const AiModelSettings: React.FC<{
     plugin.settings.isMultiSpeakerEnabled = value;
     saveSettings();
   };
+  
+  const handleToggleDisableLlmTranscription = () => {
+    const value = !isDisableLlmTranscription;
+    setIsDisableLlmTranscription(value);
+    plugin.settings.isDisableLlmTranscription = value;
+    saveSettings();
+  };
 
   return (
     <div>
       <h2>AI model options</h2>
+      <SettingsItem
+        name="Disable LLM transcription"
+        description="If enabled, audio will not be sent to any LLM for transcription"
+        control={
+          <div
+            className={`checkbox-container ${isDisableLlmTranscription ? 'is-enabled' : ''}`}
+            onClick={(e) => {
+              handleToggleDisableLlmTranscription();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleToggleDisableLlmTranscription();
+              }
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={isDisableLlmTranscription}
+              onChange={handleToggleDisableLlmTranscription}
+            />
+          </div>
+        }
+      />
+
       <SettingsItem
         name="Transcript platform"
         description="Your recording is uploaded to this service"

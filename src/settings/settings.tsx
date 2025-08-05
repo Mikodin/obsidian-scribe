@@ -40,6 +40,7 @@ export interface ScribePluginSettings {
   isSaveAudioFileActive: boolean;
   isOnlyTranscribeActive: boolean;
   isAppendToActiveFile: boolean;
+  isDisableLlmTranscription: boolean;
   audioFileLanguage: LanguageOptions;
   scribeOutputLanguage: OutputLanguageOptions;
   activeNoteTemplate: ScribeTemplate;
@@ -63,6 +64,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   isSaveAudioFileActive: true,
   isOnlyTranscribeActive: false,
   isAppendToActiveFile: false,
+  isDisableLlmTranscription: false,
   audioFileLanguage: LanguageOptions.auto,
   scribeOutputLanguage: LanguageOptions.en,
   activeNoteTemplate: DEFAULT_TEMPLATE,

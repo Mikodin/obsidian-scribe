@@ -109,7 +109,7 @@ export async function setupFileFrontmatter(
     await plugin.app.fileManager.processFrontMatter(noteFile, (frontMatter) => {
       const newFrontMatter = {
         ...frontMatter,
-        source: audioFile
+        audio: audioFile
           ? [...(frontMatter.source || []), `[[${audioFile.path}]]`]
           : frontMatter.source,
       };
