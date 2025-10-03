@@ -58,6 +58,44 @@ export function TrashIcon() {
   );
 }
 
+export function PauseIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={24}
+      height={24}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      className="lucide lucide-pause"
+    >
+      <title>Pause Icon</title>
+      <path d="M10 4h-2v16h2V4zM16 4h-2v16h2V4z" />
+    </svg>
+  );
+}
+
+export function ResumeIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={24}
+      height={24}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      className="lucide lucide-play"
+    >
+      <title>Resume / Play Icon</title>
+      <path d="M6 4l14 8-14 8V4z" />
+    </svg>
+  );
+}
+
 export const CircleAlert = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
