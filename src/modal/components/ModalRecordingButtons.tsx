@@ -1,4 +1,9 @@
-import { TrashIcon, SaveIcon, MicVocal } from '../icons/icons';
+import { 
+  TrashIcon, 
+  SaveIcon, 
+  PauseIcon, 
+  ResumeIcon, 
+  MicVocal } from '../icons/icons';
 
 export function ModalRecordingButtons({
   active,
@@ -40,6 +45,24 @@ export function ModalRecordingButtons({
         >
           <TrashIcon />
           Reset
+        </button>
+
+        <button
+          className="scribe-btn"
+          onClick={handlePauseResume}
+          type="button"
+          disabled={isScribing}
+        >
+          {recordingState === "recording" && (
+            <>
+              <PauseIcon /> Pause
+            </>
+          )}
+          {recordingState === "paused" && (
+            <>
+              <ResumeIcon /> Resume
+            </>
+          )}
         </button>
 
         {/**
