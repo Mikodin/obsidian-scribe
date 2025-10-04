@@ -1,23 +1,19 @@
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
-import { ChatOpenAI } from '@langchain/openai';
 /**
  * This was heavily inspired by
  * https://github.com/drewmcdonald/obsidian-magic-mic
  * Thank you for traversing this in such a clean way
  */
 import OpenAI from 'openai';
-import type { FileLike } from 'openai/uploads';
-import { z } from 'zod';
 import audioDataToChunkedFiles from './audioDataToChunkedFiles';
+import type { FileLike } from 'openai/uploads';
+import { ChatOpenAI } from '@langchain/openai';
+import { z } from 'zod';
+import { SystemMessage } from '@langchain/core/messages';
 
 import { Notice } from 'obsidian';
 import type { ScribeOptions } from 'src';
 import { LanguageOptions } from './consts';
 import { convertToSafeJsonKey } from './textUtil';
-
-// Custom fetcher required to avoid CORS error,
-// which I faced when used Gemini OpenAI-compatible API
-import { obsidianOpenAIFetch } from './obsidianOpenAIFetch';
 
 export enum LLM_MODELS {
   'gpt-4.1' = 'gpt-4.1',
@@ -37,7 +33,6 @@ export async function chunkAndTranscribeWithOpenAi(
   customModel?: string,
 ) {
   const openAiClient = new OpenAI({
-    fetch: obsidianOpenAIFetch,
     apiKey: openAiKey,
     dangerouslyAllowBrowser: true,
     ...(customBaseUrl && { baseURL: customBaseUrl }),
@@ -125,12 +120,10 @@ export async function summarizeTranscript(
   - Do not include escaped new line characters
   - Do not mention "the speaker" anywhere in your response.  
   - The notes should be written as if I were writing them. 
-  `;
 
-  const humanMessage = `
   The following is the transcribed audio:
   <transcript>
-  ${transcript.trim()}
+  ${transcript}
   </transcript>
   `;
   const modelToUse = customChatModel || llmModel;
@@ -138,19 +131,9 @@ export async function summarizeTranscript(
     model: modelToUse,
     apiKey: openAiKey,
     temperature: 0.5,
-    ...(customBaseUrl && {
-      configuration: {
-        baseURL: customBaseUrl,
-        fetch: obsidianOpenAIFetch,
-      },
-    }),
+    ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
   });
-  const messages = [
-    new SystemMessage(systemPrompt),
-    // HumanMessage required by GeminiAPI,
-    // or return GenerateContentRequest.contents: contents is not specified
-    new HumanMessage(humanMessage),
-  ];
+  const messages = [new SystemMessage(systemPrompt)];
 
   if (scribeOutputLanguage) {
     messages.push(
@@ -208,9 +191,7 @@ Thank you
     model: modelToUse,
     apiKey: openAiKey,
     temperature: 0.3,
-    ...(customBaseUrl && {
-      configuration: { baseURL: customBaseUrl, fetch: obsidianOpenAIFetch },
-    }),
+    ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
   });
   const messages = [new SystemMessage(systemPrompt)];
   const structuredOutput = z.object({
