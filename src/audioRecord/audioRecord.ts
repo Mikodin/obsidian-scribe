@@ -20,6 +20,8 @@ export class AudioRecord {
   data: BlobPart[] = [];
   fileExtension: string;
   startTime: number | null = null;
+  pausedAt: number | null = null;
+  totalPausedMs = 0;
   desiredFormat: 'webm' | 'mp3';
 
   private mimeType: SupportedMimeType = pickMimeType('audio/webm; codecs=opus');
@@ -33,7 +35,10 @@ export class AudioRecord {
   }
 
   async startRecording(deviceId?: string) {
-    const audioConstraints = deviceId && deviceId !== '' 
+    this.data = [];
+    this.totalPausedMs = 0;
+    this.pausedAt = null;
+    const audioConstraints = deviceId && deviceId !== ''
       ? { deviceId: { exact: deviceId } }
       : true;
 
@@ -43,6 +48,8 @@ export class AudioRecord {
         this.mediaRecorder = this.setupMediaRecorder(stream);
         this.mediaRecorder.start();
         this.startTime = Date.now();
+        this.totalPausedMs = 0;
+        this.pausedAt = null;
       })
       .catch((err) => {
         new Notice('Scribe: Failed to access the microphone');
@@ -70,6 +77,10 @@ export class AudioRecord {
       console.error('There is no mediaRecorder, cannot resume resumeRecording');
       throw new Error('There is no mediaRecorder, cannot resumeRecording');
     }
+    if (this.pausedAt) {
+      this.totalPausedMs += Date.now() - this.pausedAt;
+      this.pausedAt = null;
+    }
     this.mediaRecorder?.resume();
   }
 
@@ -78,6 +89,7 @@ export class AudioRecord {
       console.error('There is no mediaRecorder, cannot pauseRecording');
       throw new Error('There is no mediaRecorder, cannot pauseRecording');
     }
+    this.pausedAt = Date.now();
     this.mediaRecorder?.pause();
   }
 
@@ -133,11 +145,21 @@ export class AudioRecord {
           }
 
           const blob = new Blob(this.data, { type: this.mimeType });
-          const duration = (this.startTime && Date.now() - this.startTime) || 0;
+          if (this.pausedAt) {
+            this.totalPausedMs += Date.now() - this.pausedAt;
+            this.pausedAt = null;
+          }
+          const duration =
+            (this.startTime &&
+              Math.max(0, Date.now() - this.startTime - this.totalPausedMs)) ||
+            0;
           const fixedBlob = await fixWebmDuration(blob, duration, {});
 
           this.mediaRecorder = null;
           this.startTime = null;
+          this.pausedAt = null;
+          this.totalPausedMs = 0;
+          this.data = [];
 
           // If MP3 is desired, convert the WebM blob to MP3
           if (this.desiredFormat === 'mp3') {

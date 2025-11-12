@@ -2,7 +2,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Modal } from 'obsidian';
 import type ScribePlugin from 'src';
 import type { ScribeOptions } from 'src';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ModalRecordingTimer } from './components/ModalRecordingTimer';
 import { ModalRecordingButtons } from './components/ModalRecordingButtons';
 import { CircleAlert } from './icons/icons';
@@ -49,9 +49,10 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   const [recordingState, setRecordingState] =
     useState<RecordingState>('inactive');
   const [isScribing, setIsScribing] = useState(false);
-  const [recordingStartTimeMs, setRecordingStartTimeMs] = useState<
-    number | null
-  >(null);
+  const [accumulatedElapsedMs, setAccumulatedElapsedMs] = useState(0);
+  const [displayElapsedMs, setDisplayElapsedMs] = useState(0);
+  const [lastResumeTimestampMs, setLastResumeTimestampMs] =
+    useState<number | null>(null);
   const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
     isAppendToActiveFile: plugin.settings.isAppendToActiveFile,
     isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
@@ -67,34 +68,76 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
 
   const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);
 
-  const handleStart = async () => {
-    setRecordingState('recording');
-    await plugin.startRecording();
-    setRecordingStartTimeMs(Date.now());
+  useEffect(() => {
+    if (!isActive) {
+      setDisplayElapsedMs(0);
+      return;
+    }
 
+    if (isPaused || lastResumeTimestampMs === null) {
+      setDisplayElapsedMs(accumulatedElapsedMs);
+      return;
+    }
+
+    const updateElapsed = () => {
+      setDisplayElapsedMs(
+        accumulatedElapsedMs + (Date.now() - lastResumeTimestampMs),
+      );
+    };
+
+    updateElapsed();
+    const interval = window.setInterval(updateElapsed, 50);
+
+    return () => window.clearInterval(interval);
+  }, [isActive, isPaused, lastResumeTimestampMs, accumulatedElapsedMs]);
+
+  const handleStart = async () => {
+    const now = Date.now();
+    setAccumulatedElapsedMs(0);
+    setDisplayElapsedMs(0);
+    setLastResumeTimestampMs(now);
+    setRecordingState('recording');
     setIsActive(true);
     setIsPaused(false);
+    await plugin.startRecording();
   };
 
   const handlePauseResume = () => {
-    const updatedIsPauseState = !isPaused;
-    setIsPaused(updatedIsPauseState);
-
-    if (updatedIsPauseState) {
-      setRecordingState('paused');
-    } else {
+    if (isPaused) {
+      setLastResumeTimestampMs(Date.now());
       setRecordingState('recording');
+      setIsPaused(false);
+    } else {
+      const now = Date.now();
+      let updatedElapsed = accumulatedElapsedMs;
+      if (lastResumeTimestampMs !== null) {
+        updatedElapsed += now - lastResumeTimestampMs;
+      }
+      setAccumulatedElapsedMs(updatedElapsed);
+      setDisplayElapsedMs(updatedElapsed);
+      setLastResumeTimestampMs(null);
+      setRecordingState('paused');
+      setIsPaused(true);
     }
 
     plugin.handlePauseResumeRecording();
   };
 
   const handleComplete = async () => {
+    let finalElapsed = accumulatedElapsedMs;
+    if (!isPaused && lastResumeTimestampMs !== null) {
+      finalElapsed += Date.now() - lastResumeTimestampMs;
+    }
+
+    setAccumulatedElapsedMs(finalElapsed);
+    setDisplayElapsedMs(finalElapsed);
+    setLastResumeTimestampMs(null);
     setIsPaused(true);
     setIsScribing(true);
-    setRecordingStartTimeMs(null);
     setRecordingState('inactive');
     await plugin.scribe(scribeOptions);
+    setAccumulatedElapsedMs(0);
+    setDisplayElapsedMs(0);
     setIsPaused(false);
     setIsActive(false);
     setIsScribing(false);
@@ -105,7 +148,10 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
 
     setRecordingState('inactive');
     setIsActive(false);
-    setRecordingStartTimeMs(null);
+    setAccumulatedElapsedMs(0);
+    setDisplayElapsedMs(0);
+    setLastResumeTimestampMs(null);
+    setIsPaused(true);
   };
 
   return (
@@ -124,7 +170,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
       )}
       {hasOpenAiApiKey && (
         <>
-          <ModalRecordingTimer startTimeMs={recordingStartTimeMs} />
+          <ModalRecordingTimer elapsedMs={displayElapsedMs} />
 
           <ModalRecordingButtons
             recordingState={recordingState}
