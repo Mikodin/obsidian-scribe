@@ -1,32 +1,5 @@
-import { useEffect, useState } from 'react';
-
-export function ModalRecordingTimer({
-  startTimeMs,
-}: { startTimeMs: number | null }) {
-  const [duration, setDuration] = useState({
-    minutes: 0,
-    seconds: 0,
-    milliseconds: 0,
-  });
-
-  useEffect(() => {
-    let interval: number | undefined = undefined;
-
-    if (startTimeMs && !interval) {
-      interval = window.setInterval(() => {
-        const { minutes, seconds, milliseconds } =
-          calculateDuration(startTimeMs);
-
-        setDuration({ minutes, seconds, milliseconds });
-      }, 10);
-    } else {
-      setDuration({ minutes: 0, seconds: 0, milliseconds: 0 });
-      interval && window.clearInterval(interval as number);
-    }
-    return () => {
-      interval && window.clearInterval(interval as number);
-    };
-  }, [startTimeMs]);
+export function ModalRecordingTimer({ elapsedMs }: { elapsedMs: number }) {
+  const duration = calculateDuration(elapsedMs);
 
   return (
     <div className="scribe-timer">
@@ -43,9 +16,10 @@ export function ModalRecordingTimer({
   );
 }
 
-function calculateDuration(startTime: number) {
-  const currentTime = Date.now();
-  const durationInMs = currentTime - startTime;
+function calculateDuration(durationInMs: number) {
+  if (!Number.isFinite(durationInMs) || durationInMs < 0) {
+    durationInMs = 0;
+  }
 
   let remainingTime = durationInMs;
   const hours = Math.floor(remainingTime / (1000 * 60 * 60));
