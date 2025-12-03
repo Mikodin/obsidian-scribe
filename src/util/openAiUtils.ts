@@ -1,15 +1,14 @@
+import { ChatOpenAI } from '@langchain/openai';
 /**
  * This was heavily inspired by
  * https://github.com/drewmcdonald/obsidian-magic-mic
  * Thank you for traversing this in such a clean way
  */
 import OpenAI from 'openai';
-import audioDataToChunkedFiles from './audioDataToChunkedFiles';
-import type { FileLike } from 'openai/uploads';
-import { ChatOpenAI } from '@langchain/openai';
 import { z } from 'zod';
-import { SystemMessage } from '@langchain/core/messages';
+import audioDataToChunkedFiles from './audioDataToChunkedFiles';
 
+import { SystemMessage } from 'langchain';
 import { Notice } from 'obsidian';
 import type { ScribeOptions } from 'src';
 import { LanguageOptions } from './consts';
@@ -57,7 +56,7 @@ export async function chunkAndTranscribeWithOpenAi(
  */
 
 interface TranscriptionOptions {
-  audioFiles: FileLike[];
+  audioFiles: File[];
   onChunkStart?: (i: number, totalChunks: number) => void;
   audioFileLanguage?: LanguageOptions;
   customModel?: string;
@@ -65,7 +64,12 @@ interface TranscriptionOptions {
 
 async function transcribeAudio(
   client: OpenAI,
-  { audioFiles, onChunkStart, audioFileLanguage, customModel }: TranscriptionOptions,
+  {
+    audioFiles,
+    onChunkStart,
+    audioFileLanguage,
+    customModel,
+  }: TranscriptionOptions,
 ): Promise<string> {
   let transcript = '';
   for (const [i, file] of audioFiles.entries()) {

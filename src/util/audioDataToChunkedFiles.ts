@@ -4,9 +4,6 @@
  * Thank you for this
  */
 
-import { toFile } from 'openai';
-import type { FileLike } from 'openai/uploads';
-
 /**
  * Given an input file, converts it to mono, splits that mono audio into chunks
  * of a maximum size, and re-encodes the chunks as WAV files.
@@ -14,7 +11,7 @@ import type { FileLike } from 'openai/uploads';
 export default async function audioDataToChunkedFiles(
   audioData: ArrayBuffer,
   maxSize: number,
-): Promise<FileLike[]> {
+): Promise<File[]> {
   const audioContext = new window.AudioContext();
   const sourceBuffer = await audioContext.decodeAudioData(audioData);
   const monoBuffer = audioBufferToMono(audioContext, sourceBuffer);
@@ -23,7 +20,7 @@ export default async function audioDataToChunkedFiles(
   const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
   const nChunks = Math.ceil(monoBuffer.length / chunkSamples);
 
-  const files: FileLike[] = [];
+  const files: File[] = [];
 
   for (let i = 0; i < nChunks; i++) {
     const startSample = i * chunkSamples;
@@ -42,7 +39,9 @@ export default async function audioDataToChunkedFiles(
 
     // Convert the chunk to a WAV ArrayBuffer
     const wavArrayBuffer = audioBufferToWav(chunkBuffer);
-    const file = await toFile(wavArrayBuffer, fileName(i, 'wav'));
+    const file = new File([wavArrayBuffer], fileName(i, 'wav'), {
+      type: 'audio/wav',
+    });
 
     files.push(file);
   }

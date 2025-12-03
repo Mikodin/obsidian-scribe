@@ -12,7 +12,8 @@
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
-    "lib": ["DOM", "ES5", "ES6", "ES7"]
+    "lib": ["DOM", "ES5", "ES6", "ES7"],
+    "skipLibCheck": true // to prevent tsc throwing errors from node_modules
   },
   "include": ["src/*.ts", "src/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }

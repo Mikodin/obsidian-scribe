@@ -4,6 +4,7 @@ import { useDebounce } from 'src/util/useDebounce';
 
 import type ScribePlugin from 'src';
 
+// import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
 import { LLM_MODELS } from 'src/util/openAiUtils';
 
 import { useState } from 'react';
@@ -22,12 +23,12 @@ export enum TRANSCRIPT_PLATFORM {
   assemblyAi = 'assemblyAi',
   openAi = 'openAi',
   customOpenAi = 'customOpenAi',
-  google = 'google',
+  // google = 'google',
 }
 export enum PROCESS_PLATFORM {
   openAi = 'openAi',
   customOpenAi = 'customOpenAi',
-  google = 'google',
+  // google = 'google',
 }
 
 export enum OBSIDIAN_PATHS {
@@ -61,8 +62,11 @@ export interface ScribePluginSettings {
   customOpenAiBaseUrl: string;
   customTranscriptModel: string;
   customChatModel: string;
-  // Provider settings
+  // Process platform settings
   processPlatform: PROCESS_PLATFORM;
+  // Gemini settings
+  // googleModel: GOOGLE_MODELS;
+  googleAiApiKey: string;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -93,6 +97,8 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   customTranscriptModel: 'whisper-1',
   customChatModel: 'gpt-4o',
   processPlatform: PROCESS_PLATFORM.openAi,
+  // googleModel: GOOGLE_MODELS['gemini-flash-latest'],
+  googleAiApiKey: '',
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {

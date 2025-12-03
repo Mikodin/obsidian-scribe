@@ -1,3 +1,4 @@
+// import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
 import { LLM_MODELS } from 'src/util/openAiUtils';
 import {
   SettingsInput,
@@ -17,10 +18,10 @@ const transcriptSelectMapping = [
     displayName: 'AssemblyAI',
     value: TRANSCRIPT_PLATFORM.assemblyAi,
   },
-  {
-    displayName: 'GoogleAI',
-    value: TRANSCRIPT_PLATFORM.google,
-  },
+  // {
+  //   displayName: 'GoogleAI',
+  //   value: TRANSCRIPT_PLATFORM.google,
+  // },
   {
     displayName: 'Custom endpoint (OpenAI-compatible)',
     value: TRANSCRIPT_PLATFORM.customOpenAi,
@@ -31,10 +32,10 @@ const processSelectMapping = [
     displayName: 'OpenAI',
     value: TRANSCRIPT_PLATFORM.openAi,
   },
-  {
-    displayName: 'GoogleAI',
-    value: TRANSCRIPT_PLATFORM.google,
-  },
+  // {
+  //   displayName: 'GoogleAI',
+  //   value: TRANSCRIPT_PLATFORM.google,
+  // },
   {
     displayName: 'Custom endpoint (OpenAI-compatible)',
     value: TRANSCRIPT_PLATFORM.customOpenAi,
@@ -47,10 +48,14 @@ const processSelectMapping = [
 //   'gpt-4o-mini' = 'gpt-4o-mini',
 //   'gpt-4-turbo' = 'gpt-4-turbo',
 
-const LlmModelMapping = Object.values(LLM_MODELS).map((model) => ({
+const OpenAiModelMapping = Object.values(LLM_MODELS).map((model) => ({
   value: model,
   displayName: model,
 }));
+// const GoogleModelMapping = Object.values(GOOGLE_MODELS).map((model) => ({
+//   value: model,
+//   displayName: model,
+// }));
 
 /**
  * Tab, containing AI provider settings
@@ -117,9 +122,25 @@ function ProviderSettingsTab() {
         <SettingsSelect
           {...register('llmModel')}
           name="OpenAI model for creating the summary"
-          valuesMapping={LlmModelMapping}
+          valuesMapping={OpenAiModelMapping}
         />
       )}
+      {/* {settings.processPlatform === PROCESS_PLATFORM.google && (
+        <>
+          <SettingsInput
+            {...register('googleAiApiKey')}
+            name="Google AI API key"
+            placeholder="AIza..."
+          />
+          {
+            // <SettingsSelect
+            // {...register('googleModel')}
+            // name="Google AI model for creating the summary"
+            // valuesMapping={GoogleModelMapping}
+            // />
+          }
+        </>
+      )} */}
       {settings.processPlatform === PROCESS_PLATFORM.customOpenAi && (
         <>
           <SettingsInput

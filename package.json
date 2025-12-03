@@ -28,14 +28,13 @@
 		"@ffmpeg/ffmpeg": "^0.12.15",
 		"@ffmpeg/util": "^0.12.2",
 		"@fix-webm-duration/fix": "^1.0.1",
-		"@langchain/core": "^0.3.40",
-		"@langchain/openai": "^0.5.10",
+		"@langchain/openai": "^1.1.3",
 		"assemblyai": "^4.9.0",
-		"langchain": "^0.3.19",
+		"langchain": "^1.1.2",
 		"mini-debounce": "^1.0.8",
-		"openai": "^4.85.4",
+		"openai": "^6.0.0",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
-		"zod": "^3.24.2"
+		"zod": "^4.0.0"
 	}
 }

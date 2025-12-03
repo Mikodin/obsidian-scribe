@@ -1,15 +1,19 @@
 import { Notice, Plugin, type TFile, moment, normalizePath } from 'obsidian';
 import type OpenAI from 'openai';
+import { AudioRecord } from './audioRecord/audioRecord';
+import { handleCommands } from './commands/commands';
+import { ScribeControlsModal } from './modal/scribeControlsModal';
+import { handleRibbon } from './ribbon/ribbon';
+import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
 import {
   DEFAULT_SETTINGS,
-  handleSettingsTab,
-  TRANSCRIPT_PLATFORM,
+  PROCESS_PLATFORM,
   type ScribePluginSettings,
+  TRANSCRIPT_PLATFORM,
+  handleSettingsTab,
 } from './settings/settings';
-import { handleRibbon } from './ribbon/ribbon';
-import { handleCommands } from './commands/commands';
-import { getDefaultPathSettings } from './util/pathUtils';
-import { AudioRecord } from './audioRecord/audioRecord';
+import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
+import type { LanguageOptions } from './util/consts';
 import {
   appendTextToNote,
   createNewNote,
@@ -17,22 +21,20 @@ import {
   saveAudioRecording,
   setupFileFrontmatter,
 } from './util/fileUtils';
+import { formatFilenamePrefix } from './util/filenameUtils';
+// import { summarizeTranscriptGemini } from './util/geminiAiUtils';
 import {
-  chunkAndTranscribeWithOpenAi,
+  type SupportedMimeType,
+  mimeTypeToFileExtension,
+} from './util/mimeType';
+import {
   type LLM_MODELS,
+  chunkAndTranscribeWithOpenAi,
   llmFixMermaidChart,
   summarizeTranscript,
 } from './util/openAiUtils';
-import { ScribeControlsModal } from './modal/scribeControlsModal';
-import {
-  mimeTypeToFileExtension,
-  type SupportedMimeType,
-} from './util/mimeType';
+import { getDefaultPathSettings } from './util/pathUtils';
 import { convertToSafeJsonKey, extractMermaidChart } from './util/textUtil';
-import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
-import { formatFilenamePrefix } from './util/filenameUtils';
-import type { LanguageOptions } from './util/consts';
-import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
 
 export interface ScribeState {
   isOpen: boolean;
@@ -229,13 +231,13 @@ export default class ScribePlugin extends Plugin {
 
       let fixedMermaidChart: string | undefined;
       if (brokenMermaidChart) {
-        const customBaseUrl = this.settings.useCustomOpenAiBaseUrl 
-          ? this.settings.customOpenAiBaseUrl 
+        const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
+          ? this.settings.customOpenAiBaseUrl
           : undefined;
-        const customChatModel = this.settings.useCustomOpenAiBaseUrl 
-          ? this.settings.customChatModel 
+        const customChatModel = this.settings.useCustomOpenAiBaseUrl
+          ? this.settings.customChatModel
           : undefined;
-        
+
         fixedMermaidChart = (
           await llmFixMermaidChart(
             this.settings.openAiApiKey,
@@ -402,12 +404,10 @@ export default class ScribePlugin extends Plugin {
   ) {
     try {
       if (this.settings.isDisableLlmTranscription) {
-        new Notice(
-          `Scribe: 🎧 Transcription is disabled in settings`,
-        );
-        return "";
+        new Notice('Scribe: 🎧 Transcription is disabled in settings');
+        return '';
       }
-      
+
       new Notice(
         `Scribe: 🎧 Beginning transcription w/ ${this.settings.transcriptPlatform}`,
       );
@@ -422,11 +422,11 @@ export default class ScribePlugin extends Plugin {
               this.settings.openAiApiKey,
               audioBuffer,
               scribeOptions,
-              this.settings.useCustomOpenAiBaseUrl 
-                ? this.settings.customOpenAiBaseUrl 
+              this.settings.useCustomOpenAiBaseUrl
+                ? this.settings.customOpenAiBaseUrl
                 : undefined,
-              this.settings.useCustomOpenAiBaseUrl 
-                ? this.settings.customTranscriptModel 
+              this.settings.useCustomOpenAiBaseUrl
+                ? this.settings.customTranscriptModel
                 : undefined,
             );
 
@@ -453,21 +453,38 @@ export default class ScribePlugin extends Plugin {
   ) {
     new Notice('Scribe: 🧠 Sending to LLM to summarize');
 
-    const customBaseUrl = this.settings.useCustomOpenAiBaseUrl 
-      ? this.settings.customOpenAiBaseUrl 
+    const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
+      ? this.settings.customOpenAiBaseUrl
       : undefined;
-    const customChatModel = this.settings.useCustomOpenAiBaseUrl 
-      ? this.settings.customChatModel 
+    const customChatModel = this.settings.useCustomOpenAiBaseUrl
+      ? this.settings.customChatModel
       : undefined;
 
-    const llmSummary = await summarizeTranscript(
-      this.settings.openAiApiKey,
-      transcript,
-      scribeOptions,
-      this.settings.llmModel,
-      customBaseUrl,
-      customChatModel,
-    );
+    let llmSummary: Record<string, string> & {
+      fileTitle: string;
+    };
+
+    switch (this.settings.processPlatform) {
+      case PROCESS_PLATFORM.openAi:
+      case PROCESS_PLATFORM.customOpenAi:
+        llmSummary = await summarizeTranscript(
+          this.settings.openAiApiKey,
+          transcript,
+          scribeOptions,
+          this.settings.llmModel,
+          customBaseUrl,
+          customChatModel,
+        );
+        break;
+      // case PROCESS_PLATFORM.google:
+      // llmSummary = await summarizeTranscriptGemini(
+      //   this.settings.googleAiApiKey,
+      //   transcript,
+      //   scribeOptions,
+      //   this.settings.googleModel,
+      // );
+      // break;
+    }
 
     new Notice('Scribe: 🧠 LLM summation complete');
 
