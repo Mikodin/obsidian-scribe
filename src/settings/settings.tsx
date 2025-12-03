@@ -10,8 +10,7 @@ import { LLM_MODELS } from 'src/util/openAiUtils';
 import { useState } from 'react';
 import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
 import GeneralSettingsTab from './GeneralSettingsTab';
-import ProviderSettingsTab from './ProviderSettingsTab';
-import { AiModelSettings } from './components/AiModelSettings';
+import { ProviderSettingsTab } from './ai-provider-settings-tab';
 import {
   DEFAULT_TEMPLATE,
   NoteTemplateSettings,
@@ -28,7 +27,7 @@ export enum TRANSCRIPT_PLATFORM {
 export enum PROCESS_PLATFORM {
   openAi = 'openAi',
   customOpenAi = 'customOpenAi',
-  // google = 'google',
+  google = 'google',
 }
 
 export enum OBSIDIAN_PATHS {

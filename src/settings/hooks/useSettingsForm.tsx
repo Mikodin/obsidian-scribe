@@ -9,7 +9,7 @@ interface UseSettingsFormProps {
   plugin: ScribePlugin;
 }
 
-interface RegisterOptions<K extends keyof ScribePluginSettings> {
+export interface RegisterOptions<K extends keyof ScribePluginSettings> {
   /**
    * Callback to run on value in state before displaying it in input
    */

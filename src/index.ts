@@ -92,11 +92,15 @@ export default class ScribePlugin extends Plugin {
 
     const defaultPathSettings = await getDefaultPathSettings(this);
 
-    if (!this.settings.openAiApiKey) {
-      console.error(
-        'OpenAI API key is needed in Scribes settings - https://platform.openai.com/settings',
+    if (
+      !this.settings.openAiApiKey &&
+      !this.settings.googleAiApiKey &&
+      !this.settings.assemblyAiApiKey
+    ) {
+      console.error('API key is needed in Scribes settings');
+      new Notice(
+        '⚠️ Scribe: Provide API key for AI provider in plugin settings',
       );
-      new Notice('⚠️ Scribe: OpenAI API key is missing for Scribe');
     }
 
     if (!this.settings.recordingDirectory) {
