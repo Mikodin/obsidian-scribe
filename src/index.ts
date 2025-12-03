@@ -22,7 +22,7 @@ import {
   setupFileFrontmatter,
 } from './util/fileUtils';
 import { formatFilenamePrefix } from './util/filenameUtils';
-// import { summarizeTranscriptGemini } from './util/geminiAiUtils';
+import { summarizeTranscriptGemini } from './util/geminiAiUtils';
 import {
   type SupportedMimeType,
   mimeTypeToFileExtension,
@@ -476,14 +476,14 @@ export default class ScribePlugin extends Plugin {
           customChatModel,
         );
         break;
-      // case PROCESS_PLATFORM.google:
-      // llmSummary = await summarizeTranscriptGemini(
-      //   this.settings.googleAiApiKey,
-      //   transcript,
-      //   scribeOptions,
-      //   this.settings.googleModel,
-      // );
-      // break;
+      case PROCESS_PLATFORM.google:
+        llmSummary = await summarizeTranscriptGemini(
+          this.settings.googleAiApiKey,
+          transcript,
+          scribeOptions,
+          this.settings.googleModel,
+        );
+        break;
     }
 
     new Notice('Scribe: 🧠 LLM summation complete');

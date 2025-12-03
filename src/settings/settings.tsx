@@ -4,7 +4,7 @@ import { useDebounce } from 'src/util/useDebounce';
 
 import type ScribePlugin from 'src';
 
-// import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
+import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
 import { LLM_MODELS } from 'src/util/openAiUtils';
 
 import { useState } from 'react';
@@ -65,7 +65,7 @@ export interface ScribePluginSettings {
   // Process platform settings
   processPlatform: PROCESS_PLATFORM;
   // Gemini settings
-  // googleModel: GOOGLE_MODELS;
+  googleModel: GOOGLE_MODELS;
   googleAiApiKey: string;
 }
 
@@ -97,7 +97,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   customTranscriptModel: 'whisper-1',
   customChatModel: 'gpt-4o',
   processPlatform: PROCESS_PLATFORM.openAi,
-  // googleModel: GOOGLE_MODELS['gemini-flash-latest'],
+  googleModel: GOOGLE_MODELS['gemini-flash-latest'],
   googleAiApiKey: '',
 };
 

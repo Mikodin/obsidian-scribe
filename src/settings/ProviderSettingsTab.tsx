@@ -1,4 +1,4 @@
-// import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
+import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
 import { LLM_MODELS } from 'src/util/openAiUtils';
 import {
   SettingsInput,
@@ -49,6 +49,10 @@ const processSelectMapping = [
 //   'gpt-4-turbo' = 'gpt-4-turbo',
 
 const OpenAiModelMapping = Object.values(LLM_MODELS).map((model) => ({
+  value: model,
+  displayName: model,
+}));
+const GoogleModelMapping = Object.values(GOOGLE_MODELS).map((model) => ({
   value: model,
   displayName: model,
 }));
@@ -125,22 +129,20 @@ function ProviderSettingsTab() {
           valuesMapping={OpenAiModelMapping}
         />
       )}
-      {/* {settings.processPlatform === PROCESS_PLATFORM.google && (
+      {settings.processPlatform === PROCESS_PLATFORM.google && (
         <>
           <SettingsInput
             {...register('googleAiApiKey')}
             name="Google AI API key"
             placeholder="AIza..."
           />
-          {
-            // <SettingsSelect
-            // {...register('googleModel')}
-            // name="Google AI model for creating the summary"
-            // valuesMapping={GoogleModelMapping}
-            // />
-          }
+          <SettingsSelect
+            {...register('googleModel')}
+            name="Google AI model for creating the summary"
+            valuesMapping={GoogleModelMapping}
+          />
         </>
-      )} */}
+      )}
       {settings.processPlatform === PROCESS_PLATFORM.customOpenAi && (
         <>
           <SettingsInput
