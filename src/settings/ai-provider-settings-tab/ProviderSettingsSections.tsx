@@ -37,12 +37,18 @@ export function CustomOpenAiProcessingSettings({
   return (
     <>
       <SettingsInput
+        {...register('openAiApiKey')}
+        name="API key"
+        description="Your api key"
+        placeholder="sk-..."
+      />
+      <SettingsInput
         {...register('customOpenAiBaseUrl')}
         name="Custom OpenAI base URL"
         description="The base URL for your custom OpenAI-compatible API (e.g., http://localhost:1234/v1, https://your-instance.openai.azure.com/)"
       />
       <SettingsInput
-        {...register('customTranscriptModel')}
+        {...register('customChatModel')}
         name="Custom processing model"
         description="The model name to use for chat/summarization (e.g., gpt-4, llama-3.1-8b-instruct, etc.)"
         placeholder="gpt-4o"
