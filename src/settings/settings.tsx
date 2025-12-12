@@ -48,7 +48,7 @@ export interface ScribePluginSettings {
   noteTemplates: ScribeTemplate[];
   isFrontMatterLinkToScribe: boolean;
   selectedAudioDeviceId: string;
-  audioFileFormat: 'webm' | 'mp3';
+  audioFileFormat: 'webm';
   // Custom OpenAI settings
   useCustomOpenAiBaseUrl: boolean;
   customOpenAiBaseUrl: string;
