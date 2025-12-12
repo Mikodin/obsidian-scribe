@@ -96,15 +96,12 @@ function GeneralSettingsTab() {
       <SettingsSelect
         {...register('audioFileFormat')}
         name="Audio file format"
-        description="Choose the format for saving audio recordings. MP3 format will be converted from WebM on the client side."
+        description="Choose the format for saving audio recordings.  We currently only support WebM. MP3 is deprecated due to issues on MacOS and iOS."
+        // DEPRECATED: MP3 — If MP3 is desired, we'll wait for requests for it.  Our previous implementation caused issues on MacOS and iOS.
         valuesMapping={[
           {
             value: 'webm',
             displayName: 'WebM',
-          },
-          {
-            value: 'mp3',
-            displayName: 'MP3',
           },
         ]}
       />
