@@ -229,13 +229,13 @@ export default class ScribePlugin extends Plugin {
 
       let fixedMermaidChart: string | undefined;
       if (brokenMermaidChart) {
-        const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
-          ? this.settings.customOpenAiBaseUrl
+        const customBaseUrl = this.settings.useCustomOpenAiBaseUrl 
+          ? this.settings.customOpenAiBaseUrl 
           : undefined;
-        const customChatModel = this.settings.useCustomOpenAiBaseUrl
-          ? this.settings.customChatModel
+        const customChatModel = this.settings.useCustomOpenAiBaseUrl 
+          ? this.settings.customChatModel 
           : undefined;
-
+        
         fixedMermaidChart = (
           await llmFixMermaidChart(
             this.settings.openAiApiKey,
@@ -402,10 +402,12 @@ export default class ScribePlugin extends Plugin {
   ) {
     try {
       if (this.settings.isDisableLlmTranscription) {
-        new Notice('Scribe: 🎧 Transcription is disabled in settings');
-        return '';
+        new Notice(
+          `Scribe: 🎧 Transcription is disabled in settings`,
+        );
+        return "";
       }
-
+      
       new Notice(
         `Scribe: 🎧 Beginning transcription w/ ${this.settings.transcriptPlatform}`,
       );
@@ -420,11 +422,11 @@ export default class ScribePlugin extends Plugin {
               this.settings.openAiApiKey,
               audioBuffer,
               scribeOptions,
-              this.settings.useCustomOpenAiBaseUrl
-                ? this.settings.customOpenAiBaseUrl
+              this.settings.useCustomOpenAiBaseUrl 
+                ? this.settings.customOpenAiBaseUrl 
                 : undefined,
-              this.settings.useCustomOpenAiBaseUrl
-                ? this.settings.customTranscriptModel
+              this.settings.useCustomOpenAiBaseUrl 
+                ? this.settings.customTranscriptModel 
                 : undefined,
             );
 
@@ -451,11 +453,11 @@ export default class ScribePlugin extends Plugin {
   ) {
     new Notice('Scribe: 🧠 Sending to LLM to summarize');
 
-    const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
-      ? this.settings.customOpenAiBaseUrl
+    const customBaseUrl = this.settings.useCustomOpenAiBaseUrl 
+      ? this.settings.customOpenAiBaseUrl 
       : undefined;
-    const customChatModel = this.settings.useCustomOpenAiBaseUrl
-      ? this.settings.customChatModel
+    const customChatModel = this.settings.useCustomOpenAiBaseUrl 
+      ? this.settings.customChatModel 
       : undefined;
 
     const llmSummary = await summarizeTranscript(
