@@ -96,3 +96,23 @@ A: Scribe requires an internet connection for transcription and summarization se
 ---
 
 Dive into a new era of note-taking with Scribe – Where your voice breathes life into ideas. 🌈✨
+
+# Development
+## iOS
+Getting plugins into Obsidian mobile without going through Obsidian Sync and without (blindly) publishing a new version of the plugin can be tricky.
+
+### My workflow is as follows
+I have the iPhone connected to my Mac via a cable and can find it in the Finder
+Build the app `npm run build:prod`
+Drag and drop `/build/` into my `Obsidian` on device (not my vault but the root of Obsidian on My iPhone)
+
+I then copy the contents of `/build/` into my `vault/plugins/scribe` folder
+
+I am using the app `a-shell`, to copy folders
+```sh
+pickFolder # navigate to Obsidian
+ls -al # It should show all of your vaults and the `build` folder
+mv ./build/* ./vault/.obsdian/plugins/scribe/
+```
+
+I open Obsidian and `Reload app without saving`

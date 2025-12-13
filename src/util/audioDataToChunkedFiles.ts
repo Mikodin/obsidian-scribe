@@ -15,39 +15,62 @@ export default async function audioDataToChunkedFiles(
   audioData: ArrayBuffer,
   maxSize: number,
 ): Promise<FileLike[]> {
-  const audioContext = new window.AudioContext();
-  const sourceBuffer = await audioContext.decodeAudioData(audioData);
-  const monoBuffer = audioBufferToMono(audioContext, sourceBuffer);
+  try {
+    // console.log('audioDataToChunkedFiles called with audioData', audioData);
+    const audioContext = new window.AudioContext();
 
-  // Calculate chunk size in terms of samples (maxSize is in bytes)
-  const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
-  const nChunks = Math.ceil(monoBuffer.length / chunkSamples);
+    // fallback for iOS / WebKit decodeAudioData limits (> ~30s)
+    let sourceBuffer: AudioBuffer | undefined;
+    try {
+      sourceBuffer = await audioContext.decodeAudioData(audioData);
+    } catch (decodeErr) {
+      console.warn(
+        'decodeAudioData failed (possibly iOS/WebKit length limit?). Falling back to returning original file buffer.',
+        decodeErr,
+      );
+      // Return the original (encoded) audio as a single file so caller can upload/process server-side
+      const fallbackFile = await toFile(audioData, fileName(0, 'webm'));
+      return [fallbackFile];
+    }
 
-  const files: FileLike[] = [];
+    // console.log('Decoded audio data', sourceBuffer);
+    const monoBuffer = audioBufferToMono(audioContext, sourceBuffer);
+    // console.log('Converted to mono', monoBuffer);
 
-  for (let i = 0; i < nChunks; i++) {
-    const startSample = i * chunkSamples;
-    const endSample = Math.min((i + 1) * chunkSamples, monoBuffer.length);
+    // Calculate chunk size in terms of samples (maxSize is in bytes)
+    const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
+    const nChunks = Math.ceil(monoBuffer.length / chunkSamples);
 
-    // Create a new empty AudioBuffer for each chunk
-    const chunkBuffer = audioContext.createBuffer(
-      1,
-      endSample - startSample,
-      monoBuffer.sampleRate,
-    );
+    const files: FileLike[] = [];
 
-    const chunkData = chunkBuffer.getChannelData(0);
-    const originalData = monoBuffer.getChannelData(0);
-    chunkData.set(originalData.slice(startSample, endSample));
+    for (let i = 0; i < nChunks; i++) {
+      const startSample = i * chunkSamples;
+      const endSample = Math.min((i + 1) * chunkSamples, monoBuffer.length);
 
-    // Convert the chunk to a WAV ArrayBuffer
-    const wavArrayBuffer = audioBufferToWav(chunkBuffer);
-    const file = await toFile(wavArrayBuffer, fileName(i, 'wav'));
+      // Create a new empty AudioBuffer for each chunk
+      const chunkBuffer = audioContext.createBuffer(
+        1,
+        endSample - startSample,
+        monoBuffer.sampleRate,
+      );
 
-    files.push(file);
+      const chunkData = chunkBuffer.getChannelData(0);
+      const originalData = monoBuffer.getChannelData(0);
+      chunkData.set(originalData.slice(startSample, endSample));
+
+      // Convert the chunk to a WAV ArrayBuffer
+      const wavArrayBuffer = audioBufferToWav(chunkBuffer);
+      const file = await toFile(wavArrayBuffer, fileName(i, 'wav'));
+
+      files.push(file);
+    }
+
+    // console.log('Files', files);
+    return files;
+  } catch (error) {
+    console.error('Error in audioDataToChunkedFiles:', error);
+    throw error;
   }
-
-  return files;
 }
 
 /**
