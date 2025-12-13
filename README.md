@@ -46,6 +46,7 @@ Get your key in the  [AssemblyAI Dev Console https://www.assemblyai.com/app/acco
 1. In Obsidian, navigate to `Settings` > `Community Plugins`.
 2. Search for `Scribe` and click `Install`.
 3. Once installed, toggle `Enable` to activate Scribe.
+4. Obsidian may need explicit permission to access to your microphone; depending on where you're running it, you may be prompted or need to enable this manually (e.g. in System Settings → Security & Privacy → Microphone).
 
 ## 📖 How to Use
 
