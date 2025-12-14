@@ -152,7 +152,7 @@ If your plugin does not need CSS, delete this file.
   justify-content: space-between;
 
   label {
-    margin-bottom: .5em;
+    margin-bottom: 0.5em;
   }
 }
 
