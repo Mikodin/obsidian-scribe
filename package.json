@@ -7,7 +7,9 @@
 		"dev": "node esbuild.config.mjs",
 		"build:prod": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"update-all-deps": "npm outdated | awk 'NR>1 {print $1\"@\"$4}' | xargs npm install"
+		"update-all-deps": "npm outdated | awk 'NR>1 {print $1\"@\"$4}' | xargs npm install",
+		"format:check": "biome format ./src",
+		"format:write": "biome format --write ./src"
 	},
 	"keywords": [],
 	"author": "Mike Alicea",

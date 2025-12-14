@@ -65,7 +65,12 @@ interface TranscriptionOptions {
 
 async function transcribeAudio(
   client: OpenAI,
-  { audioFiles, onChunkStart, audioFileLanguage, customModel }: TranscriptionOptions,
+  {
+    audioFiles,
+    onChunkStart,
+    audioFileLanguage,
+    customModel,
+  }: TranscriptionOptions,
 ): Promise<string> {
   let transcript = '';
   for (const [i, file] of audioFiles.entries()) {
