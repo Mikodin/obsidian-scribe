@@ -35,7 +35,7 @@ Get your key in the  [AssemblyAI Dev Console https://www.assemblyai.com/app/acco
 
 - **Audio Input Device:** Select which microphone to use for recording. By default, the system's default audio input device will be used.
 
-- **Audio File Format:** Choose between WebM and MP3 formats for saving audio recordings. MP3 format will be converted from WebM on the client side.
+- **Audio File Format:** We only support `.webm` as browsers across all devices either support webm or wav.  Because of the size, `.wav` is not considered
 
 - **Disable LLM Transcription:** If enabled, audio will not be sent to any LLM for transcription, providing privacy when needed.
 

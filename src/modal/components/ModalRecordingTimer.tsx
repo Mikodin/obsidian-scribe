@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 
 export function ModalRecordingTimer({
   startTimeMs,
-}: { startTimeMs: number | null }) {
+}: {
+  startTimeMs: number | null;
+}) {
   const [duration, setDuration] = useState({
     minutes: 0,
     seconds: 0,

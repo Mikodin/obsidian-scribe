@@ -5,7 +5,7 @@
  */
 import OpenAI from 'openai';
 import audioDataToChunkedFiles from './audioDataToChunkedFiles';
-import type { FileLike } from 'openai/uploads';
+import type { Uploadable } from 'openai/uploads';
 import { ChatOpenAI } from '@langchain/openai';
 import { z } from 'zod';
 import { SystemMessage } from '@langchain/core/messages';
@@ -57,7 +57,7 @@ export async function chunkAndTranscribeWithOpenAi(
  */
 
 interface TranscriptionOptions {
-  audioFiles: FileLike[];
+  audioFiles: Uploadable[];
   onChunkStart?: (i: number, totalChunks: number) => void;
   audioFileLanguage?: LanguageOptions;
   customModel?: string;
@@ -65,7 +65,12 @@ interface TranscriptionOptions {
 
 async function transcribeAudio(
   client: OpenAI,
-  { audioFiles, onChunkStart, audioFileLanguage, customModel }: TranscriptionOptions,
+  {
+    audioFiles,
+    onChunkStart,
+    audioFileLanguage,
+    customModel,
+  }: TranscriptionOptions,
 ): Promise<string> {
   let transcript = '';
   for (const [i, file] of audioFiles.entries()) {
@@ -152,7 +157,7 @@ export async function summarizeTranscript(
   activeNoteTemplate.sections.forEach((section) => {
     const { sectionHeader, sectionInstructions, isSectionOptional } = section;
     schema[convertToSafeJsonKey(sectionHeader)] = isSectionOptional
-      ? z.string().nullish().describe(sectionInstructions)
+      ? z.string().nullable().describe(sectionInstructions)
       : z.string().describe(sectionInstructions);
   });
 

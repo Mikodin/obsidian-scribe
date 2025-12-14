@@ -8,7 +8,7 @@ import { LanguageOptions } from './consts';
 
 export async function transcribeAudioWithAssemblyAi(
   apiKey: string,
-  audioFilePath: ArrayBuffer,
+  audioBuffer: ArrayBuffer,
   options: Pick<ScribeOptions, 'isMultiSpeakerEnabled' | 'audioFileLanguage'>,
 ): Promise<string> {
   const { isMultiSpeakerEnabled = false, audioFileLanguage } = options || {};
@@ -20,7 +20,7 @@ export async function transcribeAudioWithAssemblyAi(
     audioFileLanguage && audioFileLanguage !== LanguageOptions.auto;
 
   const baseParams: TranscribeParams = {
-    audio: audioFilePath,
+    audio: audioBuffer,
     format_text: true,
     speaker_labels: isMultiSpeakerEnabled,
   };

@@ -5,7 +5,8 @@
  */
 
 import { toFile } from 'openai';
-import type { FileLike } from 'openai/uploads';
+import type { Uploadable } from 'openai/uploads';
+import { AudioContext, type IAudioBuffer } from 'standardized-audio-context';
 
 /**
  * Given an input file, converts it to mono, splits that mono audio into chunks
@@ -14,10 +15,9 @@ import type { FileLike } from 'openai/uploads';
 export default async function audioDataToChunkedFiles(
   audioData: ArrayBuffer,
   maxSize: number,
-): Promise<FileLike[]> {
+): Promise<Uploadable[]> {
   try {
-    // console.log('audioDataToChunkedFiles called with audioData', audioData);
-    const audioContext = new window.AudioContext();
+    const audioContext = new AudioContext();
 
     // fallback for iOS / WebKit decodeAudioData limits (> ~30s)
     let sourceBuffer: AudioBuffer | undefined;
@@ -33,15 +33,13 @@ export default async function audioDataToChunkedFiles(
       return [fallbackFile];
     }
 
-    // console.log('Decoded audio data', sourceBuffer);
     const monoBuffer = audioBufferToMono(audioContext, sourceBuffer);
-    // console.log('Converted to mono', monoBuffer);
 
     // Calculate chunk size in terms of samples (maxSize is in bytes)
     const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
     const nChunks = Math.ceil(monoBuffer.length / chunkSamples);
 
-    const files: FileLike[] = [];
+    const files: Uploadable[] = [];
 
     for (let i = 0; i < nChunks; i++) {
       const startSample = i * chunkSamples;
@@ -65,7 +63,6 @@ export default async function audioDataToChunkedFiles(
       files.push(file);
     }
 
-    // console.log('Files', files);
     return files;
   } catch (error) {
     console.error('Error in audioDataToChunkedFiles:', error);
@@ -101,7 +98,7 @@ function audioBufferToMono(
 }
 
 // Look, I'm not gonna pretend ChatGPT didn't write this
-export function audioBufferToWav(buffer: AudioBuffer) {
+export function audioBufferToWav(buffer: IAudioBuffer) {
   const numOfChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const length = buffer.length * numOfChannels * 2; // 16-bit PCM data
