@@ -3,11 +3,8 @@
  * https://github.com/drewmcdonald/obsidian-magic-mic
  * Thank you for traversing this in such a clean way
  */
-
-import { Notice } from 'obsidian';
 import { fixWebmDuration } from '@fix-webm-duration/fix';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { Notice } from 'obsidian';
 
 import {
   mimeTypeToFileExtension,
@@ -20,13 +17,20 @@ export class AudioRecord {
   data: BlobPart[] = [];
   fileExtension: string;
   startTime: number | null = null;
-  desiredFormat: 'webm' | 'mp3';
+  desiredFormat: string;
+  desiredMimeType: SupportedMimeType;
 
-  private mimeType: SupportedMimeType = pickMimeType('audio/webm; codecs=opus');
+  private defaultMimeType: SupportedMimeType = pickMimeType(
+    'audio/webm; codecs=opus',
+  );
   private bitRate = 32000;
 
   constructor(desiredFormat: 'webm' | 'mp3' = 'webm') {
-    this.desiredFormat = desiredFormat;
+    this.desiredMimeType =
+      pickMimeType(`audio/${desiredFormat}`) || this.defaultMimeType;
+
+    this.desiredFormat =
+      mimeTypeToFileExtension(this.desiredMimeType) || 'webm';
     // We always record in WebM format because it's widely supported
     // If MP3 is desired, we'll convert it later
     this.fileExtension = desiredFormat;
@@ -101,14 +105,18 @@ export class AudioRecord {
             throw new Error('No audio data recorded.');
           }
 
-          const blob = new Blob(this.data, { type: this.mimeType });
+          const blob = new Blob(this.data, { type: this.desiredMimeType });
           const duration = (this.startTime && Date.now() - this.startTime) || 0;
-          const fixedBlob = await fixWebmDuration(blob, duration, {});
 
           this.mediaRecorder = null;
           this.startTime = null;
 
-          resolve(fixedBlob);
+          if (mimeTypeToFileExtension(this.desiredMimeType) === 'webm') {
+            const fixedBlob = await fixWebmDuration(blob, duration, {});
+            resolve(fixedBlob);
+          }
+
+          resolve(blob);
         } catch (err) {
           console.log('Error during recording stop:', err);
           reject(err);
@@ -121,7 +129,7 @@ export class AudioRecord {
 
   private setupMediaRecorder(stream: MediaStream) {
     const rec = new MediaRecorder(stream, {
-      mimeType: this.mimeType,
+      mimeType: this.desiredMimeType,
       audioBitsPerSecond: this.bitRate,
     });
     rec.ondataavailable = (e) => {
