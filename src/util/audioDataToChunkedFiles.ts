@@ -63,7 +63,6 @@ export default async function audioDataToChunkedFiles(
       files.push(file);
     }
 
-    // console.log('Files', files);
     return files;
   } catch (error) {
     console.error('Error in audioDataToChunkedFiles:', error);

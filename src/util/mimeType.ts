@@ -24,14 +24,11 @@ const _mimeTypeToFileExtension: Record<SupportedMimeType, string> = {
 };
 
 export function pickMimeType(preferred: SupportedMimeType) {
-  console.log('Picking MIME type, preferred:', preferred);
   if (MediaRecorder.isTypeSupported(preferred)) {
-    console.log('Preferred MIME type is supported:', preferred);
     return preferred;
   }
   for (const mimeType of supportedMimeTypes) {
     if (MediaRecorder.isTypeSupported(mimeType)) {
-      console.log('Supported MIME type found:', mimeType);
       return mimeType;
     }
   }

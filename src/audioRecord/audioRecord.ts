@@ -3,7 +3,6 @@
  * https://github.com/drewmcdonald/obsidian-magic-mic
  * Thank you for traversing this in such a clean way
  */
-import { fixWebmDuration } from '@fix-webm-duration/fix';
 import { Notice } from 'obsidian';
 
 import {
@@ -102,20 +101,14 @@ export class AudioRecord {
           }
 
           const blob = new Blob(this.data, { type: this.chosenMimeType });
-          const duration = (this.startTime && Date.now() - this.startTime) || 0;
+          console.log('Scribe: Recording stopped, audio Blob created', blob);
 
           this.mediaRecorder = null;
           this.startTime = null;
 
-          if (mimeTypeToFileExtension(this.chosenMimeType) === 'webm') {
-            console.log('Fixing WebM duration..., because it is WebM format');
-            const fixedBlob = await fixWebmDuration(blob, duration, {});
-            resolve(fixedBlob);
-          }
-
           resolve(blob);
         } catch (err) {
-          console.log('Error during recording stop:', err);
+          console.error('Error during recording stop:', err);
           reject(err);
         }
       };

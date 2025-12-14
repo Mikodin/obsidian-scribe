@@ -115,10 +115,6 @@ export default class ScribePlugin extends Plugin {
 
   async startRecording() {
     new Notice('Scribe: 🎙️ Recording started');
-    console.log(
-      'Starting new recording with format:',
-      this.settings.audioFileFormat,
-    );
     const newRecording = new AudioRecord();
     this.state.audioRecord = newRecording;
 
