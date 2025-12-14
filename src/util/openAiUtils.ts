@@ -5,7 +5,7 @@
  */
 import OpenAI from 'openai';
 import audioDataToChunkedFiles from './audioDataToChunkedFiles';
-import type { FileLike } from 'openai/uploads';
+import type { Uploadable } from 'openai/uploads';
 import { ChatOpenAI } from '@langchain/openai';
 import { z } from 'zod';
 import { SystemMessage } from '@langchain/core/messages';
@@ -57,7 +57,7 @@ export async function chunkAndTranscribeWithOpenAi(
  */
 
 interface TranscriptionOptions {
-  audioFiles: FileLike[];
+  audioFiles: Uploadable[];
   onChunkStart?: (i: number, totalChunks: number) => void;
   audioFileLanguage?: LanguageOptions;
   customModel?: string;
