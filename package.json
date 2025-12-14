@@ -36,6 +36,7 @@
 		"openai": "^6.10.0",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
+		"standardized-audio-context": "^25.3.77",
 		"zod": "^4.1.13"
 	}
 }
