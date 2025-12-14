@@ -6,7 +6,6 @@ const supportedMimeTypes = [
   'audio/webm',
   'audio/ogg',
   'audio/mp4',
-  'audio/mp3',
   'audio/m4a',
   'audio/wav',
   'audio/flac',
@@ -19,18 +18,20 @@ const _mimeTypeToFileExtension: Record<SupportedMimeType, string> = {
   'audio/webm': 'webm',
   'audio/ogg': 'ogg',
   'audio/mp4': 'mp4',
-  'audio/mp3': 'mp3',
   'audio/m4a': 'm4a',
   'audio/wav': 'wav',
   'audio/flac': 'flac',
 };
 
 export function pickMimeType(preferred: SupportedMimeType) {
+  console.log('Picking MIME type, preferred:', preferred);
   if (MediaRecorder.isTypeSupported(preferred)) {
+    console.log('Preferred MIME type is supported:', preferred);
     return preferred;
   }
   for (const mimeType of supportedMimeTypes) {
     if (MediaRecorder.isTypeSupported(mimeType)) {
+      console.log('Supported MIME type found:', mimeType);
       return mimeType;
     }
   }

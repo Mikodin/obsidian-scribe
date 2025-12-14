@@ -17,23 +17,19 @@ export class AudioRecord {
   data: BlobPart[] = [];
   fileExtension: string;
   startTime: number | null = null;
-  desiredFormat: string;
-  desiredMimeType: SupportedMimeType;
+  chosenFormat: string;
+  chosenMimeType: SupportedMimeType;
 
+  // We always record in WebM format because it's widely supported
   private defaultMimeType: SupportedMimeType = pickMimeType(
     'audio/webm; codecs=opus',
   );
   private bitRate = 32000;
 
-  constructor(desiredFormat: 'webm' | 'mp3' = 'webm') {
-    this.desiredMimeType =
-      pickMimeType(`audio/${desiredFormat}`) || this.defaultMimeType;
-
-    this.desiredFormat =
-      mimeTypeToFileExtension(this.desiredMimeType) || 'webm';
-    // We always record in WebM format because it's widely supported
-    // If MP3 is desired, we'll convert it later
-    this.fileExtension = desiredFormat;
+  constructor() {
+    this.chosenMimeType = pickMimeType(this.defaultMimeType);
+    this.chosenFormat = mimeTypeToFileExtension(this.chosenMimeType);
+    this.fileExtension = this.chosenFormat;
   }
 
   async startRecording(deviceId?: string) {
@@ -105,13 +101,14 @@ export class AudioRecord {
             throw new Error('No audio data recorded.');
           }
 
-          const blob = new Blob(this.data, { type: this.desiredMimeType });
+          const blob = new Blob(this.data, { type: this.chosenMimeType });
           const duration = (this.startTime && Date.now() - this.startTime) || 0;
 
           this.mediaRecorder = null;
           this.startTime = null;
 
-          if (mimeTypeToFileExtension(this.desiredMimeType) === 'webm') {
+          if (mimeTypeToFileExtension(this.chosenMimeType) === 'webm') {
+            console.log('Fixing WebM duration..., because it is WebM format');
             const fixedBlob = await fixWebmDuration(blob, duration, {});
             resolve(fixedBlob);
           }
@@ -129,7 +126,7 @@ export class AudioRecord {
 
   private setupMediaRecorder(stream: MediaStream) {
     const rec = new MediaRecorder(stream, {
-      mimeType: this.desiredMimeType,
+      mimeType: this.chosenMimeType,
       audioBitsPerSecond: this.bitRate,
     });
     rec.ondataavailable = (e) => {

@@ -1,15 +1,20 @@
-import { Notice, Plugin, type TFile, moment, normalizePath } from 'obsidian';
+import { Notice, normalizePath, Plugin, type TFile } from 'obsidian';
 import type OpenAI from 'openai';
+
+import { AudioRecord } from './audioRecord/audioRecord';
+import { handleCommands } from './commands/commands';
+import { ScribeControlsModal } from './modal/scribeControlsModal';
+import { handleRibbon } from './ribbon/ribbon';
+import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
 import {
   DEFAULT_SETTINGS,
   handleSettingsTab,
-  TRANSCRIPT_PLATFORM,
   type ScribePluginSettings,
+  TRANSCRIPT_PLATFORM,
 } from './settings/settings';
-import { handleRibbon } from './ribbon/ribbon';
-import { handleCommands } from './commands/commands';
-import { getDefaultPathSettings } from './util/pathUtils';
-import { AudioRecord } from './audioRecord/audioRecord';
+import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
+import type { LanguageOptions } from './util/consts';
+import { formatFilenamePrefix } from './util/filenameUtils';
 import {
   appendTextToNote,
   createNewNote,
@@ -18,21 +23,17 @@ import {
   setupFileFrontmatter,
 } from './util/fileUtils';
 import {
+  mimeTypeToFileExtension,
+  type SupportedMimeType,
+} from './util/mimeType';
+import {
   chunkAndTranscribeWithOpenAi,
   type LLM_MODELS,
   llmFixMermaidChart,
   summarizeTranscript,
 } from './util/openAiUtils';
-import { ScribeControlsModal } from './modal/scribeControlsModal';
-import {
-  mimeTypeToFileExtension,
-  type SupportedMimeType,
-} from './util/mimeType';
+import { getDefaultPathSettings } from './util/pathUtils';
 import { convertToSafeJsonKey, extractMermaidChart } from './util/textUtil';
-import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
-import { formatFilenamePrefix } from './util/filenameUtils';
-import type { LanguageOptions } from './util/consts';
-import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
 
 export interface ScribeState {
   isOpen: boolean;
@@ -114,7 +115,11 @@ export default class ScribePlugin extends Plugin {
 
   async startRecording() {
     new Notice('Scribe: 🎙️ Recording started');
-    const newRecording = new AudioRecord(this.settings.audioFileFormat);
+    console.log(
+      'Starting new recording with format:',
+      this.settings.audioFileFormat,
+    );
+    const newRecording = new AudioRecord();
     this.state.audioRecord = newRecording;
 
     newRecording.startRecording(this.settings.selectedAudioDeviceId);

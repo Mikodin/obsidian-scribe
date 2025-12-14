@@ -93,21 +93,6 @@ function GeneralSettingsTab() {
         description='Save the audio file after Scribing it. If false, the audio file will be permanently deleted after transcription. This will not affect the Command for "Transcribe existing file"'
         {...register('isSaveAudioFileActive')}
       />
-      <SettingsSelect
-        {...register('audioFileFormat')}
-        name="Audio file format"
-        description="Choose the format for saving audio recordings. MP3 format will be converted from WebM on the client side."
-        valuesMapping={[
-          {
-            value: 'webm',
-            displayName: 'WebM',
-          },
-          {
-            value: 'mp3',
-            displayName: 'MP3',
-          },
-        ]}
-      />
       <SettingsItemHeader name="File names settings" />
       <SettingsInput
         {...register('recordingFilenamePrefix')}
