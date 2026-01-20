@@ -11,6 +11,10 @@ If your plugin does not need CSS, delete this file.
   width: 40%;
 }
 
+.is-mobile .modal {
+  width: 90%;
+}
+
 .scribe-control-buttons {
   margin: 3rem 0;
   width: 100%;
