@@ -66,6 +66,9 @@ export default class ScribePlugin extends Plugin {
   settings: ScribePluginSettings = DEFAULT_SETTINGS;
   state: ScribeState = DEFAULT_STATE;
   controlModal: ScribeControlsModal;
+  private recordingNotice: Notice | null = null;
+  private recordingNoticeIntervalId: number | null = null;
+  private recordingNoticeStartTime: number | null = null;
 
   async onload() {
     /**
@@ -119,6 +122,10 @@ export default class ScribePlugin extends Plugin {
     this.state.audioRecord = newRecording;
 
     newRecording.startRecording(this.settings.selectedAudioDeviceId);
+
+    if (!this.state.isOpen) {
+      this.showRecordingNotice();
+    }
   }
 
   async handlePauseResumeRecording() {
@@ -132,6 +139,7 @@ export default class ScribePlugin extends Plugin {
   }
 
   async cancelRecording() {
+    this.hideRecordingNotice();
     if (this.state.audioRecord?.mediaRecorder) {
       new Notice('Scribe: 🛑️ Recording cancelled');
       await this.state.audioRecord?.stopRecording();
@@ -474,6 +482,7 @@ export default class ScribePlugin extends Plugin {
   }
 
   cleanup() {
+    this.hideRecordingNotice();
     this.controlModal.close();
 
     if (this.state.audioRecord?.mediaRecorder?.state === 'recording') {
@@ -481,5 +490,50 @@ export default class ScribePlugin extends Plugin {
     }
 
     this.state.audioRecord = null;
+  }
+
+  showRecordingNotice() {
+    this.hideRecordingNotice();
+
+    this.recordingNoticeStartTime = Date.now();
+    const notice = new Notice(this.formatRecordingNoticeMessage(), 0);
+    notice.containerEl.addClass('scribe-recording-notice');
+    notice.containerEl.addEventListener('click', () => {
+      this.scribe();
+    });
+    this.recordingNotice = notice;
+
+    this.recordingNoticeIntervalId = window.setInterval(() => {
+      this.updateRecordingNotice();
+    }, 1000);
+    this.registerInterval(this.recordingNoticeIntervalId);
+  }
+
+  hideRecordingNotice() {
+    if (this.recordingNoticeIntervalId !== null) {
+      window.clearInterval(this.recordingNoticeIntervalId);
+      this.recordingNoticeIntervalId = null;
+    }
+    if (this.recordingNotice) {
+      this.recordingNotice.hide();
+      this.recordingNotice = null;
+    }
+    this.recordingNoticeStartTime = null;
+  }
+
+  private updateRecordingNotice() {
+    if (!this.recordingNotice || !this.recordingNoticeStartTime) return;
+    this.recordingNotice.setMessage(this.formatRecordingNoticeMessage());
+  }
+
+  private formatRecordingNoticeMessage(): string {
+    const elapsed = this.recordingNoticeStartTime
+      ? Math.floor((Date.now() - this.recordingNoticeStartTime) / 1000)
+      : 0;
+    const minutes = Math.floor(elapsed / 60)
+      .toString()
+      .padStart(2, '0');
+    const seconds = (elapsed % 60).toString().padStart(2, '0');
+    return `🔴 Scribe: Recording ${minutes}:${seconds} — Tap to save`;
   }
 }
