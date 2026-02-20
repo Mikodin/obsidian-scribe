@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-scribe-plugin",
-	"version": "2.2.7",
+	"version": "2.2.6",
 	"description": "An Obsidian plugin for recording voice notes, transcribing the audio, and summarizing the text - All in one",
 	"main": "build/main.js",
 	"scripts": {
@@ -29,7 +29,7 @@
 	"dependencies": {
 		"@langchain/core": "^1.1.5",
 		"@langchain/openai": "^1.2.0",
-		"assemblyai": "^4.23.1",
+		"assemblyai": "^4.9.0",
 		"langchain": "^1.2.0",
 		"mini-debounce": "^1.0.8",
 		"openai": "^6.10.0",

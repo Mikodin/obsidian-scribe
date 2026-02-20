@@ -1,7 +1,7 @@
 import {
   AssemblyAI,
-  type TranscribeParams,
   type TranscriptParagraph,
+  type TranscribeParams,
 } from 'assemblyai';
 import type { ScribeOptions } from 'src';
 import { LanguageOptions } from './consts';
@@ -23,8 +23,6 @@ export async function transcribeAudioWithAssemblyAi(
     audio: audioBuffer,
     format_text: true,
     speaker_labels: isMultiSpeakerEnabled,
-    /** Choosing universal-3-pro as default, cost is similar.  Will fallback to Universal-2 if language is not supported */
-    speech_models: ['universal-3-pro', 'universal-2'],
   };
 
   const params = useAudioFileLanguageSetting
