@@ -20,7 +20,7 @@ import {
   createNewNote,
   renameFile,
   saveAudioRecording,
-  setupFileFrontmatter,
+  updateFrontMatter,
 } from './util/fileUtils';
 import {
   mimeTypeToFileExtension,
@@ -169,7 +169,19 @@ export default class ScribePlugin extends Plugin {
       const { recordingBuffer, recordingFile } =
         await this.handleStopAndSaveRecording(baseFileName);
 
+      const note = await this.resolveTargetNote(
+        baseFileName,
+        scribeOptions.isAppendToActiveFile,
+      );
+
+      if (scribeOptions.isSaveAudioFileActive) {
+        await updateFrontMatter(this, note, recordingFile);
+      } else {
+        await updateFrontMatter(this, note);
+      }
+
       await this.handleScribeFile({
+        note,
         audioRecordingFile: recordingFile,
         audioRecordingBuffer: recordingBuffer,
         scribeOptions: scribeOptions,
@@ -212,10 +224,26 @@ export default class ScribePlugin extends Plugin {
         new Notice('Scribe: ⚠️ This file type is not supported.');
         return;
       }
+      const baseFileName = formatFilenamePrefix(
+        this.settings.recordingFilenamePrefix,
+        this.settings.dateFilenameFormat,
+      );
 
       const audioFileBuffer = await this.app.vault.readBinary(audioFile);
 
+      const note = await this.resolveTargetNote(
+        baseFileName,
+        scribeOptions.isAppendToActiveFile,
+      );
+
+      if (scribeOptions.isSaveAudioFileActive) {
+        await updateFrontMatter(this, note, audioFile);
+      } else {
+        await updateFrontMatter(this, note);
+      }
+
       await this.handleScribeFile({
+        note,
         audioRecordingFile: audioFile,
         audioRecordingBuffer: audioFileBuffer,
         scribeOptions: scribeOptions,
@@ -290,11 +318,32 @@ export default class ScribePlugin extends Plugin {
     return { recordingBuffer, recordingFile };
   }
 
+  private async resolveTargetNote(
+    baseFileName: string,
+    isAppendToActiveFile: boolean,
+  ): Promise<TFile> {
+    let note = isAppendToActiveFile
+      ? (this.app.workspace.getActiveFile() as TFile)
+      : await createNewNote(this, baseFileName);
+
+    if (!note) {
+      new Notice('Scribe: ⚠️ No active file to append to, creating new one!');
+      note = (await createNewNote(this, baseFileName)) as TFile;
+
+      const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
+      this.app.workspace.openLinkText(note.path, currentPath, true);
+    }
+
+    return note;
+  }
+
   async handleScribeFile({
+    note,
     audioRecordingFile,
     audioRecordingBuffer,
     scribeOptions,
   }: {
+    note: TFile;
     audioRecordingFile: TFile;
     audioRecordingBuffer: ArrayBuffer;
     scribeOptions: ScribeOptions;
@@ -305,28 +354,6 @@ export default class ScribePlugin extends Plugin {
       isSaveAudioFileActive,
       activeNoteTemplate,
     } = scribeOptions;
-    const scribeNoteFilename = `${formatFilenamePrefix(
-      this.settings.noteFilenamePrefix,
-      this.settings.dateFilenameFormat,
-    )}`;
-
-    let note = isAppendToActiveFile
-      ? (this.app.workspace.getActiveFile() as TFile)
-      : await createNewNote(this, scribeNoteFilename);
-
-    if (!note) {
-      new Notice('Scribe: ⚠️ No active file to append to, creating new one!');
-      note = (await createNewNote(this, scribeNoteFilename)) as TFile;
-
-      const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
-      this.app.workspace.openLinkText(note?.path, currentPath, true);
-    }
-
-    if (isSaveAudioFileActive) {
-      await setupFileFrontmatter(this, note, audioRecordingFile);
-    } else {
-      await setupFileFrontmatter(this, note);
-    }
 
     await this.cleanup();
 

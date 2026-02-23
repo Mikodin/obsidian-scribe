@@ -173,8 +173,8 @@ Always includes a `fileTitle` field for note renaming.
 1. User clicks "Complete" → `plugin.scribe(scribeOptions)`
 2. `audioRecord.stopRecording()` → Blob → ArrayBuffer
 3. `saveAudioRecording()` → audio file in vault
-4. Create/get target note (new note or append to active file)
-5. Setup frontmatter (`audio: [[path]]`, `created_by: [[Scribe]]`)
+4. Create/get target note (new note or append to active file) via `resolveTargetNote`
+5. Update frontmatter immediately via `updateFrontMatter` (append `audio` list + `created_by`) so audio reference is preserved even if downstream stages fail
 6. Transcribe via OpenAI or AssemblyAI → transcript text
 7. Replace "# Audio in progress" placeholder with transcript
 8. (If not transcribe-only) Summarize via LLM → structured JSON
