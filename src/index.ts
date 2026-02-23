@@ -20,7 +20,7 @@ import {
   createNewNote,
   renameFile,
   saveAudioRecording,
-  setupFileFrontmatter,
+  updateFrontMatter,
 } from './util/fileUtils';
 import {
   mimeTypeToFileExtension,
@@ -322,12 +322,6 @@ export default class ScribePlugin extends Plugin {
       this.app.workspace.openLinkText(note?.path, currentPath, true);
     }
 
-    if (isSaveAudioFileActive) {
-      await setupFileFrontmatter(this, note, audioRecordingFile);
-    } else {
-      await setupFileFrontmatter(this, note);
-    }
-
     await this.cleanup();
 
     if (!isAppendToActiveFile) {
@@ -355,6 +349,12 @@ export default class ScribePlugin extends Plugin {
       transcriptTextToAppendToNote,
       inProgressHeaderToReplace,
     );
+
+    if (isSaveAudioFileActive) {
+      await updateFrontMatter(this, note, audioRecordingFile);
+    } else {
+      await updateFrontMatter(this, note);
+    }
 
     if (isOnlyTranscribeActive) {
       return;
