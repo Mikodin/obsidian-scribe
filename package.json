@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-scribe-plugin",
-	"version": "2.2.9",
+	"version": "2.3.0",
 	"description": "An Obsidian plugin for recording voice notes, transcribing the audio, and summarizing the text - All in one",
 	"main": "build/main.js",
 	"scripts": {
