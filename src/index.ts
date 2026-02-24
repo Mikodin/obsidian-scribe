@@ -40,6 +40,7 @@ export interface ScribeState {
   counter: number;
   audioRecord: AudioRecord | null;
   openAiClient: OpenAI | null;
+  isProcessing: boolean;
 }
 
 const DEFAULT_STATE: ScribeState = {
@@ -47,6 +48,7 @@ const DEFAULT_STATE: ScribeState = {
   counter: 0,
   audioRecord: null,
   openAiClient: null,
+  isProcessing: false,
 };
 
 export interface ScribeOptions {
@@ -68,7 +70,7 @@ export default class ScribePlugin extends Plugin {
   controlModal: ScribeControlsModal;
   private recordingNotice: Notice | null = null;
   private recordingNoticeIntervalId: number | null = null;
-  private recordingNoticeStartTime: number | null = null;
+  public recordingNoticeStartTime: number | null = null;
 
   async onload() {
     /**
@@ -117,6 +119,11 @@ export default class ScribePlugin extends Plugin {
   }
 
   async startRecording() {
+    if (this.state.isProcessing) {
+      new Notice('Scribe: ⏳ Processing in progress. Please wait...');
+      return;
+    }
+
     new Notice('Scribe: 🎙️ Recording started');
     const newRecording = new AudioRecord();
     this.state.audioRecord = newRecording;
@@ -160,6 +167,7 @@ export default class ScribePlugin extends Plugin {
       activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
+    this.state.isProcessing = true;
     try {
       const baseFileName = formatFilenamePrefix(
         this.settings.recordingFilenamePrefix,
@@ -215,6 +223,7 @@ export default class ScribePlugin extends Plugin {
       activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
+    this.state.isProcessing = true;
     try {
       if (
         !mimeTypeToFileExtension(
@@ -257,6 +266,7 @@ export default class ScribePlugin extends Plugin {
   }
 
   async fixMermaidChart(file: TFile) {
+    this.state.isProcessing = true;
     try {
       let brokenMermaidChart: string | undefined;
       await this.app.vault.process(file, (data) => {
@@ -354,8 +364,6 @@ export default class ScribePlugin extends Plugin {
       isSaveAudioFileActive,
       activeNoteTemplate,
     } = scribeOptions;
-
-    await this.cleanup();
 
     if (!isAppendToActiveFile) {
       const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
@@ -511,12 +519,8 @@ export default class ScribePlugin extends Plugin {
   cleanup() {
     this.hideRecordingNotice();
     this.controlModal.close();
-
-    if (this.state.audioRecord?.mediaRecorder?.state === 'recording') {
-      this.state.audioRecord?.stopRecording();
-    }
-
     this.state.audioRecord = null;
+    this.state.isProcessing = false;
   }
 
   showRecordingNotice() {

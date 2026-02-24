@@ -1,9 +1,10 @@
-import { TrashIcon, SaveIcon, MicVocal } from '../icons/icons';
+import { MicVocal, SaveIcon, TrashIcon } from '../icons/icons';
 
 export function ModalRecordingButtons({
   active,
   isPaused,
   isScribing,
+  isProcessing,
   recordingState,
   handleStart,
   handlePauseResume,
@@ -13,6 +14,7 @@ export function ModalRecordingButtons({
   active: boolean;
   isPaused: boolean;
   isScribing: boolean;
+  isProcessing: boolean;
   recordingState: RecordingState;
   handleStart: () => void;
   handlePauseResume: () => void;
@@ -23,10 +25,11 @@ export function ModalRecordingButtons({
     <button
       className="scribe-btn scribe-btn-start"
       onClick={handleStart}
+      disabled={isProcessing}
       type="button"
     >
       <MicVocal />
-      Start
+      {isProcessing ? 'Processing...' : 'Start'}
     </button>
   );
   const ActiveButtons = (

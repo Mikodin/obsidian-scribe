@@ -1,12 +1,12 @@
-import { createRoot, type Root } from 'react-dom/client';
 import { Modal } from 'obsidian';
+import { useState } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 import type ScribePlugin from 'src';
 import type { ScribeOptions } from 'src';
-import { useState } from 'react';
-import { ModalRecordingTimer } from './components/ModalRecordingTimer';
-import { ModalRecordingButtons } from './components/ModalRecordingButtons';
-import { CircleAlert } from './icons/icons';
 import { ModalOptionsContainer } from './components/ModalOptionsContainer';
+import { ModalRecordingButtons } from './components/ModalRecordingButtons';
+import { ModalRecordingTimer } from './components/ModalRecordingTimer';
+import { CircleAlert } from './icons/icons';
 
 export class ScribeControlsModal extends Modal {
   plugin: ScribePlugin;
@@ -44,14 +44,19 @@ export class ScribeControlsModal extends Modal {
 }
 
 const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
-  const [isActive, setIsActive] = useState(false);
-  const [isPaused, setIsPaused] = useState(true);
-  const [recordingState, setRecordingState] =
-    useState<RecordingState>('inactive');
+  // Initialize state based on whether recording is already in progress
+  const isRecordingInProgress =
+    plugin.state.audioRecord?.mediaRecorder?.state === 'recording';
+
+  const [isActive, setIsActive] = useState(isRecordingInProgress);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingState, setRecordingState] = useState<RecordingState>(
+    isRecordingInProgress ? 'recording' : 'inactive',
+  );
   const [isScribing, setIsScribing] = useState(false);
   const [recordingStartTimeMs, setRecordingStartTimeMs] = useState<
     number | null
-  >(null);
+  >(plugin.recordingNoticeStartTime);
   const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
     isAppendToActiveFile: plugin.settings.isAppendToActiveFile,
     isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
@@ -90,6 +95,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   };
 
   const handleComplete = async () => {
+    plugin.hideRecordingNotice();
     setIsPaused(true);
     setIsScribing(true);
     setRecordingStartTimeMs(null);
@@ -131,6 +137,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
             active={isActive}
             isPaused={isPaused}
             isScribing={isScribing}
+            isProcessing={plugin.state.isProcessing}
             handleStart={handleStart}
             handlePauseResume={handlePauseResume}
             handleComplete={handleComplete}
