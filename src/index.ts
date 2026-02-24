@@ -518,14 +518,8 @@ export default class ScribePlugin extends Plugin {
 
   cleanup() {
     this.hideRecordingNotice();
-
-    const isNewRecordingActive =
-      this.state.audioRecord?.mediaRecorder?.state === 'recording';
-
-    if (!isNewRecordingActive) {
-      this.controlModal.close();
-      this.state.audioRecord = null;
-    }
+    this.controlModal.close();
+    this.state.audioRecord = null;
     this.state.isProcessing = false;
   }
 

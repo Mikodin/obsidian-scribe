@@ -95,6 +95,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   };
 
   const handleComplete = async () => {
+    plugin.hideRecordingNotice();
     setIsPaused(true);
     setIsScribing(true);
     setRecordingStartTimeMs(null);
