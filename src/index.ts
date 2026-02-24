@@ -70,7 +70,7 @@ export default class ScribePlugin extends Plugin {
   controlModal: ScribeControlsModal;
   private recordingNotice: Notice | null = null;
   private recordingNoticeIntervalId: number | null = null;
-  private recordingNoticeStartTime: number | null = null;
+  public recordingNoticeStartTime: number | null = null;
 
   async onload() {
     /**

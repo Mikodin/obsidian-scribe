@@ -44,14 +44,19 @@ export class ScribeControlsModal extends Modal {
 }
 
 const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
-	const [isActive, setIsActive] = useState(false);
-	const [isPaused, setIsPaused] = useState(true);
-	const [recordingState, setRecordingState] =
-		useState<RecordingState>("inactive");
+	// Initialize state based on whether recording is already in progress
+	const isRecordingInProgress =
+		plugin.state.audioRecord?.mediaRecorder?.state === "recording";
+
+	const [isActive, setIsActive] = useState(isRecordingInProgress);
+	const [isPaused, setIsPaused] = useState(false);
+	const [recordingState, setRecordingState] = useState<RecordingState>(
+		isRecordingInProgress ? "recording" : "inactive",
+	);
 	const [isScribing, setIsScribing] = useState(false);
 	const [recordingStartTimeMs, setRecordingStartTimeMs] = useState<
 		number | null
-	>(null);
+	>(plugin.recordingNoticeStartTime);
 	const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
 		isAppendToActiveFile: plugin.settings.isAppendToActiveFile,
 		isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
