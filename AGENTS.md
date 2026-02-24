@@ -89,7 +89,7 @@ src/
 - **Formatter**: Biome — 2-space indent, single quotes, semicolons, trailing commas
 - **File extensions**: `.ts` for pure logic, `.tsx` for anything with JSX
 - **Imports**: `import type` for type-only imports; `src/` base path alias for cross-feature imports, relative `./` within the same feature
-- **Async**: `async/await` throughout (one legacy `.then()` chain in `AudioRecord.startRecording`)
+- **Async**: `async/await` throughout
 - **Error handling**: `try/catch/finally` with `new Notice(...)` for user feedback, `console.error` for dev logs
 - **Comments**: sparse — JSDoc for attribution, occasional inline explanations. No pervasive function docs.
 - **No tests**: no test files exist
@@ -120,7 +120,7 @@ When adding new UI, decide: is this Obsidian-native (ribbon, commands, simple bu
    - The `useSettingsForm().register(key)` hook returns `{ onChange, value, id }` props — similar to react-hook-form's pattern.
 
 3. **Local `useState`** (Modal, templates):
-   - Modal maintains its own recording UI state (`isActive`, `isPaused`, `recordingState`, etc.).
+  - Modal maintains recording UI state (`isActive`, `recordingState`, elapsed timer display, etc.) and syncs transitions from plugin/recorder outcomes rather than optimistic toggles.
    - `scribeOptions: ScribeOptions` — a **per-session copy** of settings, modifiable without affecting persisted config.
 
 **Caveat**: Two settings mutation patterns coexist. Newer components use the context system (`register()`). Older ones (`AiModelSettings`, `NoteTemplateSettings`) directly mutate `plugin.settings.*` and call `saveSettings()`. Follow the context pattern for new work.
@@ -146,6 +146,12 @@ getUserMedia → MediaRecorder (webm/opus @ 32kbps) → Blob chunks → ArrayBuf
 ```
 
 `AudioRecord` class wraps `MediaRecorder`. Picks MIME type via priority list (prefers `audio/webm; codecs=opus`). Supports pause/resume and device selection.
+
+Pause/resume implementation notes:
+- `startRecording()` resolves only after recorder start is confirmed.
+- Pause/resume transitions are guarded (`recording` ↔ `paused`) and wait for actual recorder state change.
+- Recording duration excludes paused time (`pausedAtTime` + `accumulatedPausedDurationMs`).
+- “Active recording” means **recording or paused** (`isRecordingOrPaused()`).
 
 ### Transcription: OpenAI vs AssemblyAI
 
@@ -182,11 +188,20 @@ Always includes a `fileTitle` field for note renaming.
 10. Rename note with LLM-suggested title
 11. Cleanup: close modal, stop recording, null state
 
+### Recording UX State Model
+
+- Modal, command palette, and ribbon all treat paused recordings as in-progress sessions.
+- Recording notice/timer messages are derived from recorder-aware elapsed duration (paused time not counted).
+- `ScribePlugin` exposes helper methods used across entry points to avoid state drift:
+  - `isRecordingActive()`
+  - `getRecordingState()`
+  - `getRecordingDurationMs()`
+
 ### Alternate Entry Points
 
 - **Scribe existing file**: Command reads active audio file via `vault.readBinary()`, skips recording, enters pipeline at step 4.
 - **Fix mermaid chart**: Extracts mermaid block via regex, sends to LLM for repair, replaces in-place.
-- **Ribbon menu**: Context menu with start/stop/cancel/open-controls — calls the same plugin methods.
+- **Ribbon menu**: Context menu with start/open-controls when idle, and pause/resume/stop/cancel when recording is active.
 
 ## Key Patterns for New Development
 
