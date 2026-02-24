@@ -2,7 +2,6 @@ import { MicVocal, SaveIcon, TrashIcon } from '../icons/icons';
 
 export function ModalRecordingButtons({
   active,
-  isPaused,
   isScribing,
   isProcessing,
   recordingState,
@@ -12,7 +11,6 @@ export function ModalRecordingButtons({
   handleComplete,
 }: {
   active: boolean;
-  isPaused: boolean;
   isScribing: boolean;
   isProcessing: boolean;
   recordingState: RecordingState;
@@ -45,8 +43,6 @@ export function ModalRecordingButtons({
           Reset
         </button>
 
-        {/**
-         * 
         <button
           className="scribe-btn"
           onClick={handlePauseResume}
@@ -56,7 +52,6 @@ export function ModalRecordingButtons({
           {recordingState === 'recording' && 'Pause'}
           {recordingState === 'paused' && 'Resume'}
         </button>
-         */}
 
         <button
           className="scribe-btn scribe-btn-save"

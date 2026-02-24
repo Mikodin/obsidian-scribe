@@ -13,15 +13,25 @@ export function handleCommands(plugin: ScribePlugin) {
   plugin.addCommand({
     id: 'scribe-recording-toggle-recording',
     name: 'Start/Stop recording',
-    callback: () => {
-      const isRecordingInProgress =
-        plugin.state.audioRecord?.mediaRecorder?.state === 'recording';
+    callback: async () => {
+      const isRecordingInProgress = plugin.isRecordingActive();
 
       if (isRecordingInProgress) {
-        plugin.scribe();
+        await plugin.scribe();
       } else {
-        plugin.startRecording();
+        await plugin.startRecording();
       }
+    },
+  });
+  plugin.addCommand({
+    id: 'scribe-recording-toggle-pause',
+    name: 'Pause/Resume recording',
+    callback: async () => {
+      if (!plugin.isRecordingActive()) {
+        return;
+      }
+
+      await plugin.handlePauseResumeRecording();
     },
   });
   plugin.addCommand({
