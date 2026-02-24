@@ -124,11 +124,18 @@ export default class ScribePlugin extends Plugin {
       return;
     }
 
-    new Notice('Scribe: 🎙️ Recording started');
     const newRecording = new AudioRecord();
     this.state.audioRecord = newRecording;
 
-    newRecording.startRecording(this.settings.selectedAudioDeviceId);
+    try {
+      await newRecording.startRecording(this.settings.selectedAudioDeviceId);
+      this.recordingNoticeStartTime = newRecording.startTime;
+      new Notice('Scribe: 🎙️ Recording started');
+    } catch (error) {
+      this.state.audioRecord = null;
+      new Notice('Scribe: ⚠️ Unable to start recording');
+      throw error;
+    }
 
     if (!this.state.isOpen) {
       this.showRecordingNotice();
@@ -136,13 +143,24 @@ export default class ScribePlugin extends Plugin {
   }
 
   async handlePauseResumeRecording() {
-    this.state.audioRecord?.handlePauseResume();
-    if (this.state.audioRecord?.mediaRecorder?.state === 'recording') {
+    const audioRecord = this.state.audioRecord;
+    if (!audioRecord) {
+      throw new Error('There is no active recording');
+    }
+
+    const updatedState = await audioRecord.handlePauseResume();
+
+    if (updatedState === 'recording') {
       new Notice('Scribe: ▶️🎙️ Resuming recording');
     }
-    if (this.state.audioRecord?.mediaRecorder?.state === 'paused') {
+
+    if (updatedState === 'paused') {
       new Notice('Scribe: ⏸️🎙️ Recording paused');
     }
+
+    this.updateRecordingNotice();
+
+    return updatedState;
   }
 
   async cancelRecording() {
@@ -526,7 +544,8 @@ export default class ScribePlugin extends Plugin {
   showRecordingNotice() {
     this.hideRecordingNotice();
 
-    this.recordingNoticeStartTime = Date.now();
+    this.recordingNoticeStartTime =
+      this.state.audioRecord?.startTime ?? this.recordingNoticeStartTime;
     const notice = new Notice(this.formatRecordingNoticeMessage(), 0);
     notice.containerEl.addClass('scribe-recording-notice');
     notice.containerEl.addEventListener('click', () => {
@@ -552,19 +571,34 @@ export default class ScribePlugin extends Plugin {
     this.recordingNoticeStartTime = null;
   }
 
+  isRecordingActive() {
+    return this.state.audioRecord?.isRecordingOrPaused() ?? false;
+  }
+
+  getRecordingState(): RecordingState {
+    return this.state.audioRecord?.getRecorderState() ?? 'inactive';
+  }
+
+  getRecordingDurationMs() {
+    return this.state.audioRecord?.getRecordingDurationMs() ?? 0;
+  }
+
   private updateRecordingNotice() {
-    if (!this.recordingNotice || !this.recordingNoticeStartTime) return;
+    if (!this.recordingNotice) return;
     this.recordingNotice.setMessage(this.formatRecordingNoticeMessage());
   }
 
   private formatRecordingNoticeMessage(): string {
-    const elapsed = this.recordingNoticeStartTime
-      ? Math.floor((Date.now() - this.recordingNoticeStartTime) / 1000)
-      : 0;
+    const elapsed = Math.floor(this.getRecordingDurationMs() / 1000);
     const minutes = Math.floor(elapsed / 60)
       .toString()
       .padStart(2, '0');
     const seconds = (elapsed % 60).toString().padStart(2, '0');
+    const recordingState = this.getRecordingState();
+    if (recordingState === 'paused') {
+      return `⏸️ Scribe: Recording ${minutes}:${seconds} — Tap to save`;
+    }
+
     return `🔴 Scribe: Recording ${minutes}:${seconds} — Tap to save`;
   }
 }

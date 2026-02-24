@@ -10,6 +10,7 @@ Forgot a phrase or concept while recording?  Ask "Hey Scribe" followed by a ques
 
 ## 🌟 Key Features
 - **Voice-to-Text Magic:** Begin recording and watch as your voice notes are transcribed, summarized, and turned into actionable insights.
+- **Pause & Resume Recording:** Pause in the middle of a session and resume later without losing progress.
 - **Robust on Failure:** Designed with mobile users in mind, Scribe ensures that no step in the process is a single point of failure. Record, transcribe, and summarize on the go, with each step saved progressively. (WIP)
 - **Seamless Integration:** Utilizes AssemblyAI or OpenAI Whisper for top-tier transcription accuracy and OpenAI for cutting-edge summarization
 - **Create your custom templates:** Harness the language models and insert your own custom prompts as template!
@@ -18,9 +19,11 @@ Forgot a phrase or concept while recording?  Ask "Hey Scribe" followed by a ques
 - **Mermaid Chart Creation:** Visualize your thoughts and summaries with automatically generated Mermaid charts, providing a unique perspective on your notes.
 ## 🕹️ Commands
 ### From the Ribbon button
-- Either Click Start Recording or Open the Controls Modal
+- Start, pause/resume, stop, or cancel recording from the recording menu
 ### From the Command Pallette type "Scribe"
-- **Begin Recording with Scribe:** - Opens the controls modal for you to begin recording
+- **Open recording modal:** - Opens the controls modal
+- **Start/Stop recording:** - Starts a recording, or stops and saves an in-progress (including paused) recording
+- **Pause/Resume recording:** - Toggles pause/resume for the current in-progress recording
 - **Transcribe & Summarize Current File:** - Run this on an open audio file - it will Scribe this file.  Very useful for recording offline and later Scribing it
 - **Fix Mermaid Chart:** - Sometimes the generated Mermaid Chart is invalid, this will attempt to fix it.
 
@@ -51,8 +54,10 @@ Get your key in the  [AssemblyAI Dev Console https://www.assemblyai.com/app/acco
 ## 📖 How to Use
 
 1. **Start Recording:** Trigger the Scribe action or select it from the ribbon and begin recording 
-2. **Interactive Queries:** Pose questions during recording to have them answered and integrated into your notes just say "Hey Scribe" followed by the question.
-3. **Review and Explore:** Access the transcribed text, summary, insights, and Mermaid charts directly in your note.
+2. **Pause/Resume as needed:** Paused recordings are still treated as active sessions and can be resumed from the modal, command palette, or ribbon menu.
+3. **Complete Recording:** Save when you are done; timer duration excludes paused time.
+4. **Interactive Queries:** Pose questions during recording to have them answered and integrated into your notes just say "Hey Scribe" followed by the question.
+5. **Review and Explore:** Access the transcribed text, summary, insights, and Mermaid charts directly in your note.
 
 ## 📱 Mobile
 
