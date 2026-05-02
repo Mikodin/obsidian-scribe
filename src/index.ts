@@ -1,5 +1,6 @@
-import { Notice, Plugin, type TFile, moment, normalizePath } from 'obsidian';
+import { Notice, normalizePath, Plugin, type TFile } from 'obsidian';
 import type OpenAI from 'openai';
+
 import { AudioRecord } from './audioRecord/audioRecord';
 import { handleCommands } from './commands/commands';
 import { ScribeControlsModal } from './modal/scribeControlsModal';
@@ -7,29 +8,29 @@ import { handleRibbon } from './ribbon/ribbon';
 import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
 import {
   DEFAULT_SETTINGS,
+  handleSettingsTab,
   PROCESS_PLATFORM,
   type ScribePluginSettings,
   TRANSCRIPT_PLATFORM,
-  handleSettingsTab,
 } from './settings/settings';
 import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
 import type { LanguageOptions } from './util/consts';
+import { formatFilenamePrefix } from './util/filenameUtils';
 import {
   appendTextToNote,
   createNewNote,
   renameFile,
   saveAudioRecording,
-  setupFileFrontmatter,
+  updateFrontMatter,
 } from './util/fileUtils';
-import { formatFilenamePrefix } from './util/filenameUtils';
 import { summarizeTranscriptGemini } from './util/geminiAiUtils';
 import {
-  type SupportedMimeType,
   mimeTypeToFileExtension,
+  type SupportedMimeType,
 } from './util/mimeType';
 import {
-  type LLM_MODELS,
   chunkAndTranscribeWithOpenAi,
+  type LLM_MODELS,
   llmFixMermaidChart,
   summarizeTranscript,
 } from './util/openAiUtils';
@@ -41,6 +42,7 @@ export interface ScribeState {
   counter: number;
   audioRecord: AudioRecord | null;
   openAiClient: OpenAI | null;
+  isProcessing: boolean;
 }
 
 const DEFAULT_STATE: ScribeState = {
@@ -48,6 +50,7 @@ const DEFAULT_STATE: ScribeState = {
   counter: 0,
   audioRecord: null,
   openAiClient: null,
+  isProcessing: false,
 };
 
 export interface ScribeOptions {
@@ -67,6 +70,9 @@ export default class ScribePlugin extends Plugin {
   settings: ScribePluginSettings = DEFAULT_SETTINGS;
   state: ScribeState = DEFAULT_STATE;
   controlModal: ScribeControlsModal;
+  private recordingNotice: Notice | null = null;
+  private recordingNoticeIntervalId: number | null = null;
+  public recordingNoticeStartTime: number | null = null;
 
   async onload() {
     /**
@@ -119,24 +125,52 @@ export default class ScribePlugin extends Plugin {
   }
 
   async startRecording() {
-    new Notice('Scribe: 🎙️ Recording started');
-    const newRecording = new AudioRecord(this.settings.audioFileFormat);
+    if (this.state.isProcessing) {
+      new Notice('Scribe: ⏳ Processing in progress. Please wait...');
+      return;
+    }
+
+    const newRecording = new AudioRecord();
     this.state.audioRecord = newRecording;
 
-    newRecording.startRecording(this.settings.selectedAudioDeviceId);
+    try {
+      await newRecording.startRecording(this.settings.selectedAudioDeviceId);
+      this.recordingNoticeStartTime = newRecording.startTime;
+      new Notice('Scribe: 🎙️ Recording started');
+    } catch (error) {
+      this.state.audioRecord = null;
+      new Notice('Scribe: ⚠️ Unable to start recording');
+      throw error;
+    }
+
+    if (!this.state.isOpen) {
+      this.showRecordingNotice();
+    }
   }
 
   async handlePauseResumeRecording() {
-    this.state.audioRecord?.handlePauseResume();
-    if (this.state.audioRecord?.mediaRecorder?.state === 'recording') {
+    const audioRecord = this.state.audioRecord;
+    if (!audioRecord) {
+      throw new Error('There is no active recording');
+    }
+
+    const updatedState = await audioRecord.handlePauseResume();
+
+    if (updatedState === 'recording') {
       new Notice('Scribe: ▶️🎙️ Resuming recording');
     }
-    if (this.state.audioRecord?.mediaRecorder?.state === 'paused') {
+
+    if (updatedState === 'paused') {
       new Notice('Scribe: ⏸️🎙️ Recording paused');
     }
+
+    this.updateRecordingNotice();
+
+    return updatedState;
   }
 
   async cancelRecording() {
+    this.hideRecordingNotice();
     if (this.state.audioRecord?.mediaRecorder) {
       new Notice('Scribe: 🛑️ Recording cancelled');
       await this.state.audioRecord?.stopRecording();
@@ -157,6 +191,7 @@ export default class ScribePlugin extends Plugin {
       activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
+    this.state.isProcessing = true;
     try {
       const baseFileName = formatFilenamePrefix(
         this.settings.recordingFilenamePrefix,
@@ -166,7 +201,19 @@ export default class ScribePlugin extends Plugin {
       const { recordingBuffer, recordingFile } =
         await this.handleStopAndSaveRecording(baseFileName);
 
+      const note = await this.resolveTargetNote(
+        baseFileName,
+        scribeOptions.isAppendToActiveFile,
+      );
+
+      if (scribeOptions.isSaveAudioFileActive) {
+        await updateFrontMatter(this, note, recordingFile);
+      } else {
+        await updateFrontMatter(this, note);
+      }
+
       await this.handleScribeFile({
+        note,
         audioRecordingFile: recordingFile,
         audioRecordingBuffer: recordingBuffer,
         scribeOptions: scribeOptions,
@@ -200,6 +247,7 @@ export default class ScribePlugin extends Plugin {
       activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
+    this.state.isProcessing = true;
     try {
       if (
         !mimeTypeToFileExtension(
@@ -209,10 +257,26 @@ export default class ScribePlugin extends Plugin {
         new Notice('Scribe: ⚠️ This file type is not supported.');
         return;
       }
+      const baseFileName = formatFilenamePrefix(
+        this.settings.recordingFilenamePrefix,
+        this.settings.dateFilenameFormat,
+      );
 
       const audioFileBuffer = await this.app.vault.readBinary(audioFile);
 
+      const note = await this.resolveTargetNote(
+        baseFileName,
+        scribeOptions.isAppendToActiveFile,
+      );
+
+      if (scribeOptions.isSaveAudioFileActive) {
+        await updateFrontMatter(this, note, audioFile);
+      } else {
+        await updateFrontMatter(this, note);
+      }
+
       await this.handleScribeFile({
+        note,
         audioRecordingFile: audioFile,
         audioRecordingBuffer: audioFileBuffer,
         scribeOptions: scribeOptions,
@@ -226,6 +290,7 @@ export default class ScribePlugin extends Plugin {
   }
 
   async fixMermaidChart(file: TFile) {
+    this.state.isProcessing = true;
     try {
       let brokenMermaidChart: string | undefined;
       await this.app.vault.process(file, (data) => {
@@ -287,11 +352,32 @@ export default class ScribePlugin extends Plugin {
     return { recordingBuffer, recordingFile };
   }
 
+  private async resolveTargetNote(
+    baseFileName: string,
+    isAppendToActiveFile: boolean,
+  ): Promise<TFile> {
+    let note = isAppendToActiveFile
+      ? (this.app.workspace.getActiveFile() as TFile)
+      : await createNewNote(this, baseFileName);
+
+    if (!note) {
+      new Notice('Scribe: ⚠️ No active file to append to, creating new one!');
+      note = (await createNewNote(this, baseFileName)) as TFile;
+
+      const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
+      this.app.workspace.openLinkText(note.path, currentPath, true);
+    }
+
+    return note;
+  }
+
   async handleScribeFile({
+    note,
     audioRecordingFile,
     audioRecordingBuffer,
     scribeOptions,
   }: {
+    note: TFile;
     audioRecordingFile: TFile;
     audioRecordingBuffer: ArrayBuffer;
     scribeOptions: ScribeOptions;
@@ -302,30 +388,6 @@ export default class ScribePlugin extends Plugin {
       isSaveAudioFileActive,
       activeNoteTemplate,
     } = scribeOptions;
-    const scribeNoteFilename = `${formatFilenamePrefix(
-      this.settings.noteFilenamePrefix,
-      this.settings.dateFilenameFormat,
-    )}`;
-
-    let note = isAppendToActiveFile
-      ? (this.app.workspace.getActiveFile() as TFile)
-      : await createNewNote(this, scribeNoteFilename);
-
-    if (!note) {
-      new Notice('Scribe: ⚠️ No active file to append to, creating new one!');
-      note = (await createNewNote(this, scribeNoteFilename)) as TFile;
-
-      const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
-      this.app.workspace.openLinkText(note?.path, currentPath, true);
-    }
-
-    if (isSaveAudioFileActive) {
-      await setupFileFrontmatter(this, note, audioRecordingFile);
-    } else {
-      await setupFileFrontmatter(this, note);
-    }
-
-    await this.cleanup();
 
     if (!isAppendToActiveFile) {
       const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
@@ -496,12 +558,70 @@ export default class ScribePlugin extends Plugin {
   }
 
   cleanup() {
+    this.hideRecordingNotice();
     this.controlModal.close();
+    this.state.audioRecord = null;
+    this.state.isProcessing = false;
+  }
 
-    if (this.state.audioRecord?.mediaRecorder?.state === 'recording') {
-      this.state.audioRecord?.stopRecording();
+  showRecordingNotice() {
+    this.hideRecordingNotice();
+
+    this.recordingNoticeStartTime =
+      this.state.audioRecord?.startTime ?? this.recordingNoticeStartTime;
+    const notice = new Notice(this.formatRecordingNoticeMessage(), 0);
+    notice.containerEl.addClass('scribe-recording-notice');
+    notice.containerEl.addEventListener('click', () => {
+      this.scribe();
+    });
+    this.recordingNotice = notice;
+
+    this.recordingNoticeIntervalId = window.setInterval(() => {
+      this.updateRecordingNotice();
+    }, 1000);
+    this.registerInterval(this.recordingNoticeIntervalId);
+  }
+
+  hideRecordingNotice() {
+    if (this.recordingNoticeIntervalId !== null) {
+      window.clearInterval(this.recordingNoticeIntervalId);
+      this.recordingNoticeIntervalId = null;
+    }
+    if (this.recordingNotice) {
+      this.recordingNotice.hide();
+      this.recordingNotice = null;
+    }
+    this.recordingNoticeStartTime = null;
+  }
+
+  isRecordingActive() {
+    return this.state.audioRecord?.isRecordingOrPaused() ?? false;
+  }
+
+  getRecordingState(): RecordingState {
+    return this.state.audioRecord?.getRecorderState() ?? 'inactive';
+  }
+
+  getRecordingDurationMs() {
+    return this.state.audioRecord?.getRecordingDurationMs() ?? 0;
+  }
+
+  private updateRecordingNotice() {
+    if (!this.recordingNotice) return;
+    this.recordingNotice.setMessage(this.formatRecordingNoticeMessage());
+  }
+
+  private formatRecordingNoticeMessage(): string {
+    const elapsed = Math.floor(this.getRecordingDurationMs() / 1000);
+    const minutes = Math.floor(elapsed / 60)
+      .toString()
+      .padStart(2, '0');
+    const seconds = (elapsed % 60).toString().padStart(2, '0');
+    const recordingState = this.getRecordingState();
+    if (recordingState === 'paused') {
+      return `⏸️ Scribe: Recording ${minutes}:${seconds} — Tap to save`;
     }
 
-    this.state.audioRecord = null;
+    return `🔴 Scribe: Recording ${minutes}:${seconds} — Tap to save`;
   }
 }

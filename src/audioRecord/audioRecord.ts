@@ -3,11 +3,7 @@
  * https://github.com/drewmcdonald/obsidian-magic-mic
  * Thank you for traversing this in such a clean way
  */
-
 import { Notice } from 'obsidian';
-import { fixWebmDuration } from '@fix-webm-duration/fix';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 import {
   mimeTypeToFileExtension,
@@ -20,34 +16,69 @@ export class AudioRecord {
   data: BlobPart[] = [];
   fileExtension: string;
   startTime: number | null = null;
-  desiredFormat: 'webm' | 'mp3';
+  chosenFormat: string;
+  chosenMimeType: SupportedMimeType;
+  pausedAtTime: number | null = null;
+  accumulatedPausedDurationMs = 0;
 
-  private mimeType: SupportedMimeType = pickMimeType('audio/webm; codecs=opus');
+  // We prefer WebM/Opus and fall back to another supported MIME type when needed
+  private defaultMimeType: SupportedMimeType = pickMimeType(
+    'audio/webm; codecs=opus',
+  );
   private bitRate = 32000;
 
-  constructor(desiredFormat: 'webm' | 'mp3' = 'webm') {
-    this.desiredFormat = desiredFormat;
-    // We always record in WebM format because it's widely supported
-    // If MP3 is desired, we'll convert it later
-    this.fileExtension = desiredFormat;
+  constructor() {
+    this.chosenMimeType = pickMimeType(this.defaultMimeType);
+    this.chosenFormat = mimeTypeToFileExtension(this.chosenMimeType);
+    this.fileExtension = this.chosenFormat;
   }
 
   async startRecording(deviceId?: string) {
-    const audioConstraints = deviceId && deviceId !== '' 
-      ? { deviceId: { exact: deviceId } }
-      : true;
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      throw new Error('There is already an active recording session');
+    }
 
-    navigator.mediaDevices
-      .getUserMedia({ audio: audioConstraints })
-      .then((stream) => {
-        this.mediaRecorder = this.setupMediaRecorder(stream);
-        this.mediaRecorder.start();
-        this.startTime = Date.now();
-      })
-      .catch((err) => {
-        new Notice('Scribe: Failed to access the microphone');
-        console.error('Error accessing microphone:', err);
+    const audioConstraints =
+      deviceId && deviceId !== '' ? { deviceId: { exact: deviceId } } : true;
+
+    this.data = [];
+    this.startTime = null;
+    this.pausedAtTime = null;
+    this.accumulatedPausedDurationMs = 0;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: audioConstraints,
       });
+
+      this.mediaRecorder = this.setupMediaRecorder(stream);
+
+      await new Promise<void>((resolve, reject) => {
+        const recorder = this.mediaRecorder as MediaRecorder;
+
+        const handleStart = () => {
+          this.startTime = Date.now();
+          recorder.removeEventListener('error', handleStartError);
+          resolve();
+        };
+
+        const handleStartError = () => {
+          recorder.removeEventListener('start', handleStart);
+          reject(new Error('Failed to start recording'));
+        };
+
+        recorder.addEventListener('start', handleStart, { once: true });
+        recorder.addEventListener('error', handleStartError, { once: true });
+
+        recorder.start();
+      });
+    } catch (err) {
+      new Notice('Scribe: Failed to access the microphone');
+      console.error('Error accessing microphone:', err);
+      this.mediaRecorder = null;
+      this.startTime = null;
+      throw err;
+    }
   }
 
   async handlePauseResume() {
@@ -59,56 +90,34 @@ export class AudioRecord {
     }
 
     if (this.mediaRecorder.state === 'paused') {
-      this.resumeRecording();
+      await this.resumeRecording();
     } else if (this.mediaRecorder.state === 'recording') {
-      this.pauseRecording();
+      await this.pauseRecording();
     }
+
+    return this.getRecorderState();
   }
 
   async resumeRecording() {
-    if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+    if (!this.mediaRecorder || this.mediaRecorder.state !== 'paused') {
       console.error('There is no mediaRecorder, cannot resume resumeRecording');
-      throw new Error('There is no mediaRecorder, cannot resumeRecording');
+      throw new Error('There is no paused mediaRecorder, cannot resume');
     }
-    this.mediaRecorder?.resume();
+
+    this.mediaRecorder.resume();
+
+    await this.waitForRecorderState('recording');
   }
 
   async pauseRecording() {
-    if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+    if (!this.mediaRecorder || this.mediaRecorder.state !== 'recording') {
       console.error('There is no mediaRecorder, cannot pauseRecording');
-      throw new Error('There is no mediaRecorder, cannot pauseRecording');
+      throw new Error('There is no recording mediaRecorder, cannot pause');
     }
-    this.mediaRecorder?.pause();
-  }
 
-  async convertWebmToMp3(webmBlob: Blob): Promise<Blob> {
-    try {
-      const ffmpeg = new FFmpeg();
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      
-      // Load FFmpeg
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      });
-      
-      // Write input WebM file
-      await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
-      
-      // Convert WebM to MP3
-      await ffmpeg.exec(['-i', 'input.webm', '-c:a', 'libmp3lame', '-q:a', '2', 'output.mp3']);
-      
-      // Read the output file
-      const data = await ffmpeg.readFile('output.mp3');
-      
-      // Create a Blob from the output data
-      const mp3Blob = new Blob([data], { type: 'audio/mp3' });
-      
-      return mp3Blob;
-    } catch (error) {
-      console.error('Error converting WebM to MP3:', error);
-      throw new Error(`Failed to convert WebM to MP3: ${error.message}`);
-    }
+    this.mediaRecorder.pause();
+
+    await this.waitForRecorderState('paused');
   }
 
   stopRecording() {
@@ -122,55 +131,135 @@ export class AudioRecord {
         return;
       }
 
-      this.mediaRecorder.onstop = async () => {
+      const recorder = this.mediaRecorder;
+
+      const handleStop = async () => {
         try {
-          this.mediaRecorder?.stream
-            .getTracks()
-            .forEach((track) => track.stop());
+          recorder.stream.getTracks().forEach((track) => {
+            track.stop();
+          });
 
           if (this.data.length === 0) {
             throw new Error('No audio data recorded.');
           }
 
-          const blob = new Blob(this.data, { type: this.mimeType });
-          const duration = (this.startTime && Date.now() - this.startTime) || 0;
-          const fixedBlob = await fixWebmDuration(blob, duration, {});
+          const blob = new Blob(this.data, { type: this.chosenMimeType });
+          console.log('Scribe: Recording stopped, audio Blob created', blob);
 
+          this.data = [];
           this.mediaRecorder = null;
           this.startTime = null;
+          this.pausedAtTime = null;
+          this.accumulatedPausedDurationMs = 0;
 
-          // If MP3 is desired, convert the WebM blob to MP3
-          if (this.desiredFormat === 'mp3') {
-            try {
-              const mp3Blob = await this.convertWebmToMp3(fixedBlob);
-              resolve(mp3Blob);
-            } catch (conversionError) {
-              console.error('Error converting to MP3, falling back to WebM:', conversionError);
-              new Notice('Scribe: Failed to convert to MP3, saving as WebM instead');
-              resolve(fixedBlob);
-            }
-          } else {
-            resolve(fixedBlob);
-          }
+          resolve(blob);
         } catch (err) {
-          console.log('Error during recording stop:', err);
+          console.error('Error during recording stop:', err);
           reject(err);
         }
       };
 
-      this.mediaRecorder.stop();
+      const handleStopError = (event: Event) => {
+        console.error('Error during recording stop:', event);
+        reject(new Error('Error while stopping recording'));
+      };
+
+      recorder.addEventListener('stop', handleStop, { once: true });
+      recorder.addEventListener('error', handleStopError, { once: true });
+
+      recorder.stop();
     });
+  }
+
+  getRecorderState(): RecordingState {
+    return this.mediaRecorder?.state ?? 'inactive';
+  }
+
+  isRecordingOrPaused(): boolean {
+    const state = this.getRecorderState();
+    return state === 'recording' || state === 'paused';
+  }
+
+  getRecordingDurationMs(): number {
+    if (!this.startTime) {
+      return 0;
+    }
+
+    const now = this.pausedAtTime ?? Date.now();
+    return Math.max(0, now - this.startTime - this.accumulatedPausedDurationMs);
   }
 
   private setupMediaRecorder(stream: MediaStream) {
     const rec = new MediaRecorder(stream, {
-      mimeType: this.mimeType,
+      mimeType: this.chosenMimeType,
       audioBitsPerSecond: this.bitRate,
     });
+
     rec.ondataavailable = (e) => {
       this.data.push(e.data);
     };
 
+    rec.onpause = () => {
+      this.pausedAtTime = Date.now();
+    };
+
+    rec.onresume = () => {
+      if (this.pausedAtTime) {
+        this.accumulatedPausedDurationMs += Date.now() - this.pausedAtTime;
+      }
+      this.pausedAtTime = null;
+    };
+
+    rec.onerror = (event) => {
+      console.error('MediaRecorder error:', event);
+    };
+
     return rec;
+  }
+
+  private waitForRecorderState(targetState: RecordingState) {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.mediaRecorder) {
+        reject(new Error('There is no mediaRecorder'));
+        return;
+      }
+
+      if (this.mediaRecorder.state === targetState) {
+        resolve();
+        return;
+      }
+
+      const recorder = this.mediaRecorder;
+      const timeoutId = window.setTimeout(() => {
+        recorder.removeEventListener('pause', handleTransition);
+        recorder.removeEventListener('resume', handleTransition);
+        recorder.removeEventListener('error', handleError);
+        reject(new Error(`Timed out waiting for ${targetState} state`));
+      }, 1000);
+
+      const handleTransition = () => {
+        if (recorder.state !== targetState) {
+          return;
+        }
+
+        window.clearTimeout(timeoutId);
+        recorder.removeEventListener('pause', handleTransition);
+        recorder.removeEventListener('resume', handleTransition);
+        recorder.removeEventListener('error', handleError);
+        resolve();
+      };
+
+      const handleError = () => {
+        window.clearTimeout(timeoutId);
+        recorder.removeEventListener('pause', handleTransition);
+        recorder.removeEventListener('resume', handleTransition);
+        recorder.removeEventListener('error', handleError);
+        reject(new Error(`Failed to transition to ${targetState}`));
+      };
+
+      recorder.addEventListener('pause', handleTransition);
+      recorder.addEventListener('resume', handleTransition);
+      recorder.addEventListener('error', handleError);
+    });
   }
 }

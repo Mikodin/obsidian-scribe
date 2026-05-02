@@ -100,30 +100,43 @@ export async function renameFile(
   );
 }
 
-export async function setupFileFrontmatter(
+function normalizeAudioFrontmatterValues(audio: unknown): string[] {
+  if (Array.isArray(audio)) {
+    return audio.filter(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
+  }
+
+  if (typeof audio === 'string' && audio.length > 0) {
+    return [audio];
+  }
+
+  return [];
+}
+
+export async function updateFrontMatter(
   plugin: ScribePlugin,
   noteFile: TFile,
   audioFile?: TFile,
 ) {
   try {
     await plugin.app.fileManager.processFrontMatter(noteFile, (frontMatter) => {
-      const newFrontMatter = {
-        ...frontMatter,
-        audio: audioFile
-          ? [...(frontMatter.source || []), `[[${audioFile.path}]]`]
-          : frontMatter.source,
-      };
+      const existingAudio = normalizeAudioFrontmatterValues(frontMatter.audio);
 
-      if (plugin.settings.isFrontMatterLinkToScribe) {
-        newFrontMatter.created_by = '[[Scribe]]';
+      if (audioFile) {
+        frontMatter.audio = [...existingAudio, `[[${audioFile.path}]]`];
+      } else if (frontMatter.audio !== undefined) {
+        frontMatter.audio = existingAudio;
       }
 
-      Object.assign(frontMatter, newFrontMatter);
+      if (plugin.settings.isFrontMatterLinkToScribe) {
+        frontMatter.created_by = '[[Scribe]]';
+      }
     });
 
     return noteFile;
   } catch (error) {
-    console.error('Failed to addAudioSourceToFrontmatter', error);
+    console.error('Failed to update frontmatter', error);
     throw error;
   }
 }

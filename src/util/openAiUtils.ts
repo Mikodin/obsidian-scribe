@@ -1,16 +1,17 @@
-import { ChatOpenAI } from '@langchain/openai';
 /**
  * This was heavily inspired by
  * https://github.com/drewmcdonald/obsidian-magic-mic
  * Thank you for traversing this in such a clean way
  */
+
+import { SystemMessage } from '@langchain/core/messages';
+import { ChatOpenAI } from '@langchain/openai';
+import { Notice } from 'obsidian';
 import OpenAI from 'openai';
+import type { Uploadable } from 'openai/uploads';
+import type { ScribeOptions } from 'src';
 import { z } from 'zod';
 import audioDataToChunkedFiles from './audioDataToChunkedFiles';
-
-import { SystemMessage } from 'langchain';
-import { Notice } from 'obsidian';
-import type { ScribeOptions } from 'src';
 import { LanguageOptions } from './consts';
 import { convertToSafeJsonKey } from './textUtil';
 
@@ -56,7 +57,7 @@ export async function chunkAndTranscribeWithOpenAi(
  */
 
 interface TranscriptionOptions {
-  audioFiles: File[];
+  audioFiles: Uploadable[];
   onChunkStart?: (i: number, totalChunks: number) => void;
   audioFileLanguage?: LanguageOptions;
   customModel?: string;
@@ -156,7 +157,7 @@ export async function summarizeTranscript(
   activeNoteTemplate.sections.forEach((section) => {
     const { sectionHeader, sectionInstructions, isSectionOptional } = section;
     schema[convertToSafeJsonKey(sectionHeader)] = isSectionOptional
-      ? z.string().nullish().describe(sectionInstructions)
+      ? z.string().nullable().describe(sectionInstructions)
       : z.string().describe(sectionInstructions);
   });
 

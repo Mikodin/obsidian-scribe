@@ -11,6 +11,10 @@ If your plugin does not need CSS, delete this file.
   width: 40%;
 }
 
+.is-mobile .scribe-modal {
+  width: 90%;
+}
+
 .scribe-control-buttons {
   margin: 3rem 0;
   width: 100%;
@@ -152,7 +156,7 @@ If your plugin does not need CSS, delete this file.
   justify-content: space-between;
 
   label {
-    margin-bottom: .5em;
+    margin-bottom: 0.5em;
   }
 }
 
@@ -173,4 +177,23 @@ nav[role="tabpanel"] {
   flex-direction: row;
   gap: 8px;
   padding: 0 0 24px 0;
+}
+
+/* Recording notice indicator */
+.scribe-recording-notice {
+  cursor: pointer;
+  border-left: 3px solid #e42a2a;
+  padding-left: 8px;
+  animation: scribe-notice-pulse 2s ease-in-out infinite;
+  z-index: 1000;
+}
+
+@keyframes scribe-notice-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }

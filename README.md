@@ -10,6 +10,7 @@ Forgot a phrase or concept while recording?  Ask "Hey Scribe" followed by a ques
 
 ## 🌟 Key Features
 - **Voice-to-Text Magic:** Begin recording and watch as your voice notes are transcribed, summarized, and turned into actionable insights.
+- **Pause & Resume Recording:** Pause in the middle of a session and resume later without losing progress.
 - **Robust on Failure:** Designed with mobile users in mind, Scribe ensures that no step in the process is a single point of failure. Record, transcribe, and summarize on the go, with each step saved progressively. (WIP)
 - **Seamless Integration:** Utilizes AssemblyAI or OpenAI Whisper for top-tier transcription accuracy and OpenAI for cutting-edge summarization
 - **Create your custom templates:** Harness the language models and insert your own custom prompts as template!
@@ -18,9 +19,11 @@ Forgot a phrase or concept while recording?  Ask "Hey Scribe" followed by a ques
 - **Mermaid Chart Creation:** Visualize your thoughts and summaries with automatically generated Mermaid charts, providing a unique perspective on your notes.
 ## 🕹️ Commands
 ### From the Ribbon button
-- Either Click Start Recording or Open the Controls Modal
+- Start, pause/resume, stop, or cancel recording from the recording menu
 ### From the Command Pallette type "Scribe"
-- **Begin Recording with Scribe:** - Opens the controls modal for you to begin recording
+- **Open recording modal:** - Opens the controls modal
+- **Start/Stop recording:** - Starts a recording, or stops and saves an in-progress (including paused) recording
+- **Pause/Resume recording:** - Toggles pause/resume for the current in-progress recording
 - **Transcribe & Summarize Current File:** - Run this on an open audio file - it will Scribe this file.  Very useful for recording offline and later Scribing it
 - **Fix Mermaid Chart:** - Sometimes the generated Mermaid Chart is invalid, this will attempt to fix it.
 
@@ -35,7 +38,7 @@ Get your key in the  [AssemblyAI Dev Console https://www.assemblyai.com/app/acco
 
 - **Audio Input Device:** Select which microphone to use for recording. By default, the system's default audio input device will be used.
 
-- **Audio File Format:** Choose between WebM and MP3 formats for saving audio recordings. MP3 format will be converted from WebM on the client side.
+- **Audio File Format:** We only support `.webm` as browsers across all devices either support webm or wav.  Because of the size, `.wav` is not considered
 
 - **Disable LLM Transcription:** If enabled, audio will not be sent to any LLM for transcription, providing privacy when needed.
 
@@ -46,12 +49,15 @@ Get your key in the  [AssemblyAI Dev Console https://www.assemblyai.com/app/acco
 1. In Obsidian, navigate to `Settings` > `Community Plugins`.
 2. Search for `Scribe` and click `Install`.
 3. Once installed, toggle `Enable` to activate Scribe.
+4. Obsidian may need explicit permission to access to your microphone; depending on where you're running it, you may be prompted or need to enable this manually (e.g. in System Settings → Security & Privacy → Microphone).
 
 ## 📖 How to Use
 
 1. **Start Recording:** Trigger the Scribe action or select it from the ribbon and begin recording 
-2. **Interactive Queries:** Pose questions during recording to have them answered and integrated into your notes just say "Hey Scribe" followed by the question.
-3. **Review and Explore:** Access the transcribed text, summary, insights, and Mermaid charts directly in your note.
+2. **Pause/Resume as needed:** Paused recordings are still treated as active sessions and can be resumed from the modal, command palette, or ribbon menu.
+3. **Complete Recording:** Save when you are done; timer duration excludes paused time.
+4. **Interactive Queries:** Pose questions during recording to have them answered and integrated into your notes just say "Hey Scribe" followed by the question.
+5. **Review and Explore:** Access the transcribed text, summary, insights, and Mermaid charts directly in your note.
 
 ## 📱 Mobile
 
@@ -95,3 +101,23 @@ A: Scribe requires an internet connection for transcription and summarization se
 ---
 
 Dive into a new era of note-taking with Scribe – Where your voice breathes life into ideas. 🌈✨
+
+# Development
+## iOS
+Getting plugins into Obsidian mobile without going through Obsidian Sync and without (blindly) publishing a new version of the plugin can be tricky.
+
+### My workflow is as follows
+I have the iPhone connected to my Mac via a cable and can find it in the Finder
+Build the app `npm run build:prod`
+Drag and drop `/build/` into my `Obsidian` on device (not my vault but the root of Obsidian on My iPhone)
+
+I then copy the contents of `/build/` into my `vault/plugins/scribe` folder
+
+I am using the app `a-shell`, to copy folders
+```sh
+pickFolder # navigate to Obsidian
+ls -al # It should show all of your vaults and the `build` folder
+mv ./build/* ./vault/.obsdian/plugins/scribe/
+```
+
+I open Obsidian and `Reload app without saving`
