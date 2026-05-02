@@ -5,7 +5,8 @@
  */
 
 import { toFile } from 'openai';
-import type { FileLike } from 'openai/uploads';
+import type { Uploadable } from 'openai/uploads';
+import { AudioContext, type IAudioBuffer } from 'standardized-audio-context';
 
 /**
  * Given an input file, converts it to mono, splits that mono audio into chunks
@@ -14,40 +15,59 @@ import type { FileLike } from 'openai/uploads';
 export default async function audioDataToChunkedFiles(
   audioData: ArrayBuffer,
   maxSize: number,
-): Promise<FileLike[]> {
-  const audioContext = new window.AudioContext();
-  const sourceBuffer = await audioContext.decodeAudioData(audioData);
-  const monoBuffer = audioBufferToMono(audioContext, sourceBuffer);
+): Promise<Uploadable[]> {
+  try {
+    const audioContext = new AudioContext();
 
-  // Calculate chunk size in terms of samples (maxSize is in bytes)
-  const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
-  const nChunks = Math.ceil(monoBuffer.length / chunkSamples);
+    // fallback for iOS / WebKit decodeAudioData limits (> ~30s)
+    let sourceBuffer: AudioBuffer | undefined;
+    try {
+      sourceBuffer = await audioContext.decodeAudioData(audioData);
+    } catch (decodeErr) {
+      console.warn(
+        'decodeAudioData failed (possibly iOS/WebKit length limit?). Falling back to returning original file buffer.',
+        decodeErr,
+      );
+      // Return the original (encoded) audio as a single file so caller can upload/process server-side
+      const fallbackFile = await toFile(audioData, fileName(0, 'webm'));
+      return [fallbackFile];
+    }
 
-  const files: FileLike[] = [];
+    const monoBuffer = audioBufferToMono(audioContext, sourceBuffer);
 
-  for (let i = 0; i < nChunks; i++) {
-    const startSample = i * chunkSamples;
-    const endSample = Math.min((i + 1) * chunkSamples, monoBuffer.length);
+    // Calculate chunk size in terms of samples (maxSize is in bytes)
+    const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
+    const nChunks = Math.ceil(monoBuffer.length / chunkSamples);
 
-    // Create a new empty AudioBuffer for each chunk
-    const chunkBuffer = audioContext.createBuffer(
-      1,
-      endSample - startSample,
-      monoBuffer.sampleRate,
-    );
+    const files: Uploadable[] = [];
 
-    const chunkData = chunkBuffer.getChannelData(0);
-    const originalData = monoBuffer.getChannelData(0);
-    chunkData.set(originalData.slice(startSample, endSample));
+    for (let i = 0; i < nChunks; i++) {
+      const startSample = i * chunkSamples;
+      const endSample = Math.min((i + 1) * chunkSamples, monoBuffer.length);
 
-    // Convert the chunk to a WAV ArrayBuffer
-    const wavArrayBuffer = audioBufferToWav(chunkBuffer);
-    const file = await toFile(wavArrayBuffer, fileName(i, 'wav'));
+      // Create a new empty AudioBuffer for each chunk
+      const chunkBuffer = audioContext.createBuffer(
+        1,
+        endSample - startSample,
+        monoBuffer.sampleRate,
+      );
 
-    files.push(file);
+      const chunkData = chunkBuffer.getChannelData(0);
+      const originalData = monoBuffer.getChannelData(0);
+      chunkData.set(originalData.slice(startSample, endSample));
+
+      // Convert the chunk to a WAV ArrayBuffer
+      const wavArrayBuffer = audioBufferToWav(chunkBuffer);
+      const file = await toFile(wavArrayBuffer, fileName(i, 'wav'));
+
+      files.push(file);
+    }
+
+    return files;
+  } catch (error) {
+    console.error('Error in audioDataToChunkedFiles:', error);
+    throw error;
   }
-
-  return files;
 }
 
 /**
@@ -78,7 +98,7 @@ function audioBufferToMono(
 }
 
 // Look, I'm not gonna pretend ChatGPT didn't write this
-export function audioBufferToWav(buffer: AudioBuffer) {
+export function audioBufferToWav(buffer: IAudioBuffer) {
   const numOfChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const length = buffer.length * numOfChannels * 2; // 16-bit PCM data
