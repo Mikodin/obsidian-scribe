@@ -49,7 +49,27 @@ export const obsidianFetch: Fetch = async (requestInfo, init) => {
     headersObj[key] = value;
   });
 
-  const bodyBuffer = req.body ? await req.arrayBuffer() : undefined;
+  let bodyBuffer = req.body ? await req.arrayBuffer() : undefined;
+
+  // Groq (and some other providers) reject JSON schemas that include
+  // meta-fields like `$schema`, `title`, or `additionalProperties`.
+  // Strip them from response_format.json_schema.schema before sending.
+  if (
+    bodyBuffer &&
+    (headersObj['content-type'] ?? '').includes('application/json')
+  ) {
+    try {
+      const bodyJson = JSON.parse(new TextDecoder().decode(bodyBuffer));
+      const schema = bodyJson?.response_format?.json_schema?.schema;
+      if (schema && typeof schema === 'object') {
+        delete schema.$schema;
+        delete schema.title;
+        bodyBuffer = new TextEncoder().encode(JSON.stringify(bodyJson)).buffer as ArrayBuffer;
+      }
+    } catch {
+      // Not valid JSON or no schema to strip — leave body unchanged
+    }
+  }
 
   const obsidianParams: RequestUrlParam = {
     url,

@@ -2,7 +2,6 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { type BaseMessage, HumanMessage, SystemMessage } from 'langchain';
 import type { ScribeOptions } from 'src';
 import { z } from 'zod';
-import type { LanguageOptions } from './consts';
 import { convertToSafeJsonKey } from './textUtil';
 
 export enum LLM_MODELS {
@@ -106,10 +105,12 @@ export async function summarizeTranscriptGemini(
   const structuredOutput = z.object(schema);
   const structuredLlm = model.withStructuredOutput(structuredOutput);
 
+  console.debug('[gemini] → summarizeTranscript', llmModel, `transcript: ${transcript.length} chars`);
   const result = (await structuredLlm.invoke(messages)) as Record<
     string,
     string
   > & { fileTitle: string };
+  console.debug('[gemini] ← summarizeTranscript', `fileTitle: "${result.fileTitle}"`);
 
   return await result;
 }
@@ -119,19 +120,18 @@ export async function llmFixMermaidChartGemini(
   brokenMermaidChart: string,
   llmModel: LLM_MODELS = LLM_MODELS['gemini-2.0-flash-lite'],
 ) {
-  const systemPrompt = `
-You are an expert in mermaid charts and Obsidian (the note taking app)
-Below is a <broken-mermaid-chart> that isn't rendering correctly in Obsidian
+  const systemPrompt = `You are an expert in mermaid charts and Obsidian (the note taking app).
+You will be given a broken mermaid chart that isn't rendering correctly in Obsidian.
 There may be some new line characters, or tab characters, or special characters.
-Strip them out and only return a fully valid unicode Mermaid chart that will render properly in Obsidian
+Strip them out and only return a fully valid unicode Mermaid chart that will render properly in Obsidian.
 Remove any special characters in the nodes text that isn't valid.
+CRITICAL: Use actual newline characters between each line of the chart. Do NOT write literal \\n characters.`;
+
+  const humanMessage = `Please fix the following broken mermaid chart:
 
 <broken-mermaid-chart>
 ${brokenMermaidChart}
-</broken-mermaid-chart>
-
-Thank you
-  `;
+</broken-mermaid-chart>`;
 
   const model = new ChatGoogleGenerativeAI({
     model: llmModel,
@@ -139,13 +139,24 @@ Thank you
     temperature: 0.3,
   });
 
-  const messages: BaseMessage[] = [new SystemMessage(systemPrompt)];
+  const messages: BaseMessage[] = [
+    new SystemMessage(systemPrompt),
+    new HumanMessage(humanMessage),
+  ];
   const structuredOutput = z.object({
-    mermaidChart: z.string().describe('A fully valid unicode mermaid chart'),
+    mermaidChart: z
+      .string()
+      .transform((s) => s.replace(/\\n/g, '\n'))
+      .describe(
+        'A fully valid unicode mermaid chart with real newline characters between each line',
+      ),
   });
 
   const structuredLlm = model.withStructuredOutput(structuredOutput);
+
+  console.debug('[gemini] → fixMermaidChart', llmModel, `chart: ${brokenMermaidChart.length} chars`);
   const { mermaidChart } = await structuredLlm.invoke(messages);
+  console.debug('[gemini] ← fixMermaidChart', `result: ${mermaidChart.length} chars`);
 
   return { mermaidChart };
 }
