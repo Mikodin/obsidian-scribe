@@ -6,6 +6,7 @@ import { handleCommands } from './commands/commands';
 import { ScribeControlsModal } from './modal/scribeControlsModal';
 import { handleRibbon } from './ribbon/ribbon';
 import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
+import { migrateSettings } from './settings/migration';
 import {
   DEFAULT_SETTINGS,
   handleSettingsTab,
@@ -96,8 +97,8 @@ export default class ScribePlugin extends Plugin {
   onunload() {}
 
   async loadSettings() {
-    const savedUserData: ScribePluginSettings = await this.loadData();
-    this.settings = { ...DEFAULT_SETTINGS, ...savedUserData };
+    const savedUserData = await this.loadData();
+    this.settings = { ...DEFAULT_SETTINGS, ...migrateSettings(savedUserData ?? {}) };
 
     const defaultPathSettings = await getDefaultPathSettings(this);
 
