@@ -13,6 +13,7 @@ import type { ScribeOptions } from 'src';
 import { z } from 'zod';
 import audioDataToChunkedFiles from './audioDataToChunkedFiles';
 import { LanguageOptions } from './consts';
+import { obsidianFetch } from './obsidianFetch';
 import { convertToSafeJsonKey } from './textUtil';
 
 export enum LLM_MODELS {
@@ -35,6 +36,7 @@ export async function chunkAndTranscribeWithOpenAi(
   const openAiClient = new OpenAI({
     apiKey: openAiKey,
     dangerouslyAllowBrowser: true,
+    fetch: obsidianFetch,
     ...(customBaseUrl && { baseURL: customBaseUrl }),
   });
   const audioFiles = await audioDataToChunkedFiles(audioBuffer, MAX_CHUNK_SIZE);
@@ -136,7 +138,10 @@ export async function summarizeTranscript(
     model: modelToUse,
     apiKey: openAiKey,
     temperature: 0.5,
-    ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
+    configuration: {
+      ...(customBaseUrl && { baseURL: customBaseUrl }),
+      fetch: obsidianFetch,
+    },
   });
   const messages = [new SystemMessage(systemPrompt)];
 
@@ -196,7 +201,10 @@ Thank you
     model: modelToUse,
     apiKey: openAiKey,
     temperature: 0.3,
-    ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
+    configuration: {
+      ...(customBaseUrl && { baseURL: customBaseUrl }),
+      fetch: obsidianFetch,
+    },
   });
   const messages = [new SystemMessage(systemPrompt)];
   const structuredOutput = z.object({

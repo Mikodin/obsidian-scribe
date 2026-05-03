@@ -23,7 +23,10 @@ import {
   saveAudioRecording,
   updateFrontMatter,
 } from './util/fileUtils';
-import { summarizeTranscriptGemini } from './util/geminiAiUtils';
+import {
+  llmFixMermaidChartGemini,
+  summarizeTranscriptGemini,
+} from './util/geminiAiUtils';
 import {
   mimeTypeToFileExtension,
   type SupportedMimeType,
@@ -69,7 +72,7 @@ export interface ScribeOptions {
 export default class ScribePlugin extends Plugin {
   settings: ScribePluginSettings = DEFAULT_SETTINGS;
   state: ScribeState = DEFAULT_STATE;
-  controlModal: ScribeControlsModal;
+  controlModal!: ScribeControlsModal;
   private recordingNotice: Notice | null = null;
   private recordingNoticeIntervalId: number | null = null;
   public recordingNoticeStartTime: number | null = null;
@@ -137,7 +140,7 @@ export default class ScribePlugin extends Plugin {
       await newRecording.startRecording(this.settings.selectedAudioDeviceId);
       this.recordingNoticeStartTime = newRecording.startTime;
       new Notice('Scribe: 🎙️ Recording started');
-    } catch (error) {
+    } catch (error: unknown) {
       this.state.audioRecord = null;
       new Notice('Scribe: ⚠️ Unable to start recording');
       throw error;
@@ -224,8 +227,10 @@ export default class ScribePlugin extends Plugin {
         await this.app.vault.delete(recordingFile);
         new Notice(`Scribe: ✅🗑️ Audio file deleted ${fileName}`);
       }
-    } catch (error) {
-      new Notice(`Scribe: Something went wrong ${error.toString()}`);
+    } catch (error: unknown) {
+      new Notice(
+        `Scribe: Something went wrong ${error instanceof Error ? error.message : String(error)}`,
+      );
       console.error('Scribe: Something went wrong', error);
     } finally {
       await this.cleanup();
@@ -281,8 +286,10 @@ export default class ScribePlugin extends Plugin {
         audioRecordingBuffer: audioFileBuffer,
         scribeOptions: scribeOptions,
       });
-    } catch (error) {
-      new Notice(`Scribe: Something went wrong ${error.toString()}`);
+    } catch (error: unknown) {
+      new Notice(
+        `Scribe: Something went wrong ${error instanceof Error ? error.message : String(error)}`,
+      );
       console.error('Scribe: Something went wrong', error);
     } finally {
       await this.cleanup();
@@ -298,42 +305,71 @@ export default class ScribePlugin extends Plugin {
         return data;
       });
 
-      let fixedMermaidChart: string | undefined;
-      if (brokenMermaidChart) {
-        const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
-          ? this.settings.customOpenAiBaseUrl
-          : undefined;
-        const customChatModel = this.settings.useCustomOpenAiBaseUrl
-          ? this.settings.customChatModel
-          : undefined;
+      if (!brokenMermaidChart) return;
 
-        fixedMermaidChart = (
-          await llmFixMermaidChart(
-            this.settings.openAiApiKey,
-            brokenMermaidChart,
-            this.settings.llmModel,
-            customBaseUrl,
-            customChatModel,
-          )
-        ).mermaidChart;
-      }
+      const fixedMermaidChart =
+        await this.handleFixMermaidChart(brokenMermaidChart);
 
-      if (brokenMermaidChart && fixedMermaidChart) {
+      if (fixedMermaidChart) {
         await this.app.vault.process(file, (data) => {
           brokenMermaidChart = extractMermaidChart(data);
-
           return data.replace(
             brokenMermaidChart as string,
-            `${fixedMermaidChart}
-`,
+            `${fixedMermaidChart}\n`,
           );
         });
       }
-    } catch (error) {
-      new Notice(`Scribe: Something went wrong ${error.toString()}`);
+    } catch (error: unknown) {
+      new Notice(
+        `Scribe: Something went wrong ${error instanceof Error ? error.message : String(error)}`,
+      );
     } finally {
       await this.cleanup();
     }
+  }
+
+  private async handleFixMermaidChart(
+    brokenMermaidChart: string,
+  ): Promise<string | undefined> {
+    const processingPlatform = this.settings.processPlatform;
+
+    if (!(processingPlatform in PROCESS_PLATFORM)) {
+      const errorText = `Chosen AI provider not supported: ${processingPlatform}`;
+      new Notice(errorText);
+      throw Error(errorText);
+    }
+
+    let mermaidChart: string;
+
+    switch (processingPlatform) {
+      case PROCESS_PLATFORM.openAi:
+        ({ mermaidChart } = await llmFixMermaidChart(
+          this.settings.openAiApiKey,
+          brokenMermaidChart,
+          this.settings.llmModel,
+        ));
+        break;
+
+      case PROCESS_PLATFORM.customOpenAi:
+        ({ mermaidChart } = await llmFixMermaidChart(
+          this.settings.openAiApiKey,
+          brokenMermaidChart,
+          this.settings.llmModel,
+          this.settings.customOpenAiBaseUrl,
+          this.settings.customChatModel,
+        ));
+        break;
+
+      case PROCESS_PLATFORM.google:
+        ({ mermaidChart } = await llmFixMermaidChartGemini(
+          this.settings.googleAiApiKey,
+          brokenMermaidChart,
+          this.settings.googleModel,
+        ));
+        break;
+    }
+
+    return mermaidChart;
   }
 
   async handleStopAndSaveRecording(baseFileName: string) {
@@ -468,44 +504,62 @@ export default class ScribePlugin extends Plugin {
     audioBuffer: ArrayBuffer,
     scribeOptions: ScribeOptions,
   ) {
+    const transcriptPlatform = this.settings.transcriptPlatform;
+    const isTranscribeDisabled = this.settings.isDisableLlmTranscription;
+    if (isTranscribeDisabled) {
+      new Notice('Scribe: 🎧 Transcription is disabled in settings');
+      return '';
+    }
+
+    if (!(transcriptPlatform in TRANSCRIPT_PLATFORM)) {
+      const errorText = `Choosen AI provider not supported: ${transcriptPlatform}`;
+      new Notice(errorText);
+      throw Error(errorText);
+    }
+
     try {
-      if (this.settings.isDisableLlmTranscription) {
-        new Notice('Scribe: 🎧 Transcription is disabled in settings');
-        return '';
+      new Notice(`Scribe: 🎧 Beginning transcription w/ ${transcriptPlatform}`);
+
+      let transcript: string;
+
+      switch (transcriptPlatform) {
+        case TRANSCRIPT_PLATFORM.assemblyAi:
+          transcript = await transcribeAudioWithAssemblyAi(
+            this.settings.assemblyAiApiKey,
+            audioBuffer,
+            scribeOptions,
+          );
+          break;
+
+        case TRANSCRIPT_PLATFORM.customOpenAi:
+          transcript = await chunkAndTranscribeWithOpenAi(
+            this.settings.openAiApiKey,
+            audioBuffer,
+            scribeOptions,
+            this.settings.customOpenAiBaseUrl,
+            this.settings.customTranscriptModel,
+          );
+          break;
+
+        case TRANSCRIPT_PLATFORM.openAi:
+          transcript = await chunkAndTranscribeWithOpenAi(
+            this.settings.openAiApiKey,
+            audioBuffer,
+            scribeOptions,
+          );
+          break;
       }
 
       new Notice(
-        `Scribe: 🎧 Beginning transcription w/ ${this.settings.transcriptPlatform}`,
-      );
-      const transcript =
-        this.settings.transcriptPlatform === TRANSCRIPT_PLATFORM.assemblyAi
-          ? await transcribeAudioWithAssemblyAi(
-              this.settings.assemblyAiApiKey,
-              audioBuffer,
-              scribeOptions,
-            )
-          : await chunkAndTranscribeWithOpenAi(
-              this.settings.openAiApiKey,
-              audioBuffer,
-              scribeOptions,
-              this.settings.useCustomOpenAiBaseUrl
-                ? this.settings.customOpenAiBaseUrl
-                : undefined,
-              this.settings.useCustomOpenAiBaseUrl
-                ? this.settings.customTranscriptModel
-                : undefined,
-            );
-
-      new Notice(
-        `Scribe: 🎧 Completed transcription  w/ ${this.settings.transcriptPlatform}`,
+        `Scribe: 🎧 Completed transcription  w/ ${transcriptPlatform}`,
       );
       return transcript;
-    } catch (error) {
+    } catch (error: unknown) {
       new Notice(
         `Scribe: 🎧 🛑 Something went wrong trying to Transcribe w/  ${
-          this.settings.transcriptPlatform
+          transcriptPlatform
         }
-        ${error.toString()}`,
+        ${error instanceof Error ? error.message : String(error)}`,
       );
 
       console.error;
@@ -517,44 +571,66 @@ export default class ScribePlugin extends Plugin {
     transcript: string,
     scribeOptions: ScribeOptions,
   ) {
-    new Notice('Scribe: 🧠 Sending to LLM to summarize');
+    const processingPlatform = this.settings.processPlatform;
 
-    const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
-      ? this.settings.customOpenAiBaseUrl
-      : undefined;
-    const customChatModel = this.settings.useCustomOpenAiBaseUrl
-      ? this.settings.customChatModel
-      : undefined;
+    if (!(processingPlatform in PROCESS_PLATFORM)) {
+      const errorText = `Chosen AI provider not supported: ${this.settings.transcriptPlatform}`;
+      new Notice(errorText);
+      throw Error(errorText);
+    }
 
     let llmSummary: Record<string, string> & {
       fileTitle: string;
     };
 
-    switch (this.settings.processPlatform) {
-      case PROCESS_PLATFORM.openAi:
-      case PROCESS_PLATFORM.customOpenAi:
-        llmSummary = await summarizeTranscript(
-          this.settings.openAiApiKey,
-          transcript,
-          scribeOptions,
-          this.settings.llmModel,
-          customBaseUrl,
-          customChatModel,
-        );
-        break;
-      case PROCESS_PLATFORM.google:
-        llmSummary = await summarizeTranscriptGemini(
-          this.settings.googleAiApiKey,
-          transcript,
-          scribeOptions,
-          this.settings.googleModel,
-        );
-        break;
+    try {
+      new Notice(`Scribe: 🧠 Sending to ${processingPlatform} to summarize`);
+
+      switch (processingPlatform) {
+        case PROCESS_PLATFORM.openAi:
+          llmSummary = await summarizeTranscript(
+            this.settings.openAiApiKey,
+            transcript,
+            scribeOptions,
+            this.settings.llmModel,
+          );
+          break;
+
+        case PROCESS_PLATFORM.customOpenAi:
+          llmSummary = await summarizeTranscript(
+            this.settings.openAiApiKey,
+            transcript,
+            scribeOptions,
+            this.settings.llmModel,
+            this.settings.customOpenAiBaseUrl,
+            this.settings.customChatModel,
+          );
+          break;
+
+        case PROCESS_PLATFORM.google:
+          llmSummary = await summarizeTranscriptGemini(
+            this.settings.googleAiApiKey,
+            transcript,
+            scribeOptions,
+            this.settings.googleModel,
+          );
+          break;
+      }
+
+      new Notice('Scribe: 🧠 LLM summation complete');
+
+      return llmSummary;
+    } catch (error: unknown) {
+      new Notice(
+        `Scribe: 🎧 🛑 Something went wrong trying to Transcribe w/  ${
+          processingPlatform
+        }
+        ${error instanceof Error ? error.message : String(error)}`,
+      );
+
+      console.error;
+      throw error;
     }
-
-    new Notice('Scribe: 🧠 LLM summation complete');
-
-    return llmSummary;
   }
 
   cleanup() {
