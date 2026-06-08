@@ -1,30 +1,26 @@
 import { type App, PluginSettingTab, Setting } from 'obsidian';
-import { useState } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
+import { type Root, createRoot } from 'react-dom/client';
+import { useDebounce } from 'src/util/useDebounce';
 
 import type ScribePlugin from 'src';
-import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
-import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
+
 import { LLM_MODELS } from 'src/util/openAiUtils';
-import { useDebounce } from 'src/util/useDebounce';
-import { ProviderSettingsTab } from './ai-provider-settings-tab';
+
+import { useState } from 'react';
+import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
+import GeneralSettingsTab from './GeneralSettingsTab';
+import ProviderSettingsTab from './ProviderSettingsTab';
+import { AiModelSettings } from './components/AiModelSettings';
 import {
   DEFAULT_TEMPLATE,
   NoteTemplateSettings,
   type ScribeTemplate,
 } from './components/NoteTemplateSettings';
-import GeneralSettingsTab from './GeneralSettingsTab';
 import { SettingsFormProvider } from './provider/SettingsFormProvider';
 
 export enum TRANSCRIPT_PLATFORM {
   assemblyAi = 'assemblyAi',
   openAi = 'openAi',
-  customOpenAi = 'customOpenAi',
-}
-export enum PROCESS_PLATFORM {
-  openAi = 'openAi',
-  customOpenAi = 'customOpenAi',
-  google = 'google',
 }
 
 export enum OBSIDIAN_PATHS {
@@ -54,15 +50,10 @@ export interface ScribePluginSettings {
   selectedAudioDeviceId: string;
   audioFileFormat: 'webm' | 'mp3';
   // Custom OpenAI settings
-  // useCustomOpenAiBaseUrl: boolean; // replaced with processPlatform and transcriptPlatform
+  useCustomOpenAiBaseUrl: boolean;
   customOpenAiBaseUrl: string;
   customTranscriptModel: string;
   customChatModel: string;
-  // --- Process platform settings ---
-  processPlatform: PROCESS_PLATFORM;
-  // --- Gemini settings ---
-  googleModel: GOOGLE_MODELS;
-  googleAiApiKey: string;
 }
 
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
@@ -88,12 +79,10 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   selectedAudioDeviceId: '',
   audioFileFormat: 'webm',
   // Custom OpenAI settings
+  useCustomOpenAiBaseUrl: false,
   customOpenAiBaseUrl: '',
   customTranscriptModel: 'whisper-1',
   customChatModel: 'gpt-4o',
-  processPlatform: PROCESS_PLATFORM.openAi,
-  googleModel: GOOGLE_MODELS['gemini-flash-latest'],
-  googleAiApiKey: '',
 };
 
 export async function handleSettingsTab(plugin: ScribePlugin) {
@@ -102,7 +91,7 @@ export async function handleSettingsTab(plugin: ScribePlugin) {
 
 export class ScribeSettingsTab extends PluginSettingTab {
   plugin: ScribePlugin;
-  reactRoot: Root | null = null;
+  reactRoot: Root | null;
 
   constructor(app: App, plugin: ScribePlugin) {
     super(app, plugin);
@@ -176,10 +165,10 @@ const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
               return (
                 <>
                   <ProviderSettingsTab />
-                  {/* <AiModelSettings
+                  <AiModelSettings
                     plugin={plugin}
                     saveSettings={debouncedSaveSettings}
-                  /> */}
+                  />
                 </>
               );
             case SettingsTabsId.TEMPLATES:
