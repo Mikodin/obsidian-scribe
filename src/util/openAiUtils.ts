@@ -3,17 +3,16 @@
  * https://github.com/drewmcdonald/obsidian-magic-mic
  * Thank you for traversing this in such a clean way
  */
-
-import { SystemMessage } from '@langchain/core/messages';
-import { ChatOpenAI } from '@langchain/openai';
-import { Notice } from 'obsidian';
 import OpenAI from 'openai';
-import type { Uploadable } from 'openai/uploads';
-import type { ScribeOptions } from 'src';
-import { z } from 'zod';
 import audioDataToChunkedFiles from './audioDataToChunkedFiles';
+import type { Uploadable } from 'openai/uploads';
+import { ChatOpenAI } from '@langchain/openai';
+import { z } from 'zod';
+import { SystemMessage } from '@langchain/core/messages';
+
+import { Notice } from 'obsidian';
+import type { ScribeOptions } from 'src';
 import { LanguageOptions } from './consts';
-import { obsidianFetch } from './obsidianFetch';
 import { convertToSafeJsonKey } from './textUtil';
 
 export enum LLM_MODELS {
@@ -36,7 +35,6 @@ export async function chunkAndTranscribeWithOpenAi(
   const openAiClient = new OpenAI({
     apiKey: openAiKey,
     dangerouslyAllowBrowser: true,
-    fetch: obsidianFetch,
     ...(customBaseUrl && { baseURL: customBaseUrl }),
   });
   const audioFiles = await audioDataToChunkedFiles(audioBuffer, MAX_CHUNK_SIZE);
@@ -138,10 +136,7 @@ export async function summarizeTranscript(
     model: modelToUse,
     apiKey: openAiKey,
     temperature: 0.5,
-    configuration: {
-      ...(customBaseUrl && { baseURL: customBaseUrl }),
-      fetch: obsidianFetch,
-    },
+    ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
   });
   const messages = [new SystemMessage(systemPrompt)];
 
@@ -201,10 +196,7 @@ Thank you
     model: modelToUse,
     apiKey: openAiKey,
     temperature: 0.3,
-    configuration: {
-      ...(customBaseUrl && { baseURL: customBaseUrl }),
-      fetch: obsidianFetch,
-    },
+    ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
   });
   const messages = [new SystemMessage(systemPrompt)];
   const structuredOutput = z.object({
