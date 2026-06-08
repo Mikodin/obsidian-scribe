@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"@langchain/core": "^1.1.5",
+		"@langchain/google-genai": "^2.1.30",
 		"@langchain/openai": "^1.2.0",
 		"assemblyai": "^4.23.1",
 		"langchain": "^1.2.0",
