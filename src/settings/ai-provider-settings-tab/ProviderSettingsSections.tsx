@@ -1,5 +1,5 @@
-import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
-import { LLM_MODELS } from 'src/util/openAiUtils';
+import { GEMINI_LLM_MODELS } from 'src/util/geminiAiUtils';
+import { LLM_MODELS as OpenAiLLM_MODELS } from 'src/util/openAiUtils';
 import {
   SettingsInput,
   SettingsSelect,
@@ -8,12 +8,12 @@ import {
 import type { RegisterOptions } from '../hooks/useSettingsForm';
 import type { ScribePluginSettings } from '../settings';
 
-const GoogleModelMapping = Object.values(GOOGLE_MODELS).map((model) => ({
+const GoogleModelMapping = Object.values(GEMINI_LLM_MODELS).map((model) => ({
   value: model,
   displayName: model,
 }));
 
-const OpenAiModelMapping = Object.values(LLM_MODELS).map((model) => ({
+const OpenAiModelMapping = Object.values(OpenAiLLM_MODELS).map((model) => ({
   value: model,
   displayName: model,
 }));

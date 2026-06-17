@@ -25,19 +25,19 @@ import {
   updateFrontMatter,
 } from './util/fileUtils';
 import {
-  llmFixMermaidChartGemini,
-  summarizeTranscriptGemini,
-} from './util/geminiAiUtils';
-import {
   mimeTypeToFileExtension,
   type SupportedMimeType,
 } from './util/mimeType';
 import {
   chunkAndTranscribeWithOpenAi,
-  type LLM_MODELS,
+  type LLM_MODELS as OpenAiLLM_MODELS,
   llmFixMermaidChart,
   summarizeTranscript,
 } from './util/openAiUtils';
+import {
+  geminiFixMermaidChart,
+  geminiSummarizeTranscript,
+} from './util/geminiAiUtils';
 import { getDefaultPathSettings } from './util/pathUtils';
 import { convertToSafeJsonKey, extractMermaidChart } from './util/textUtil';
 
@@ -66,7 +66,7 @@ export interface ScribeOptions {
   audioFileLanguage: LanguageOptions;
   scribeOutputLanguage: Exclude<LanguageOptions, 'auto'>;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
-  llmModel: LLM_MODELS;
+  llmModel: OpenAiLLM_MODELS;
   activeNoteTemplate: ScribeTemplate;
 }
 
@@ -98,7 +98,10 @@ export default class ScribePlugin extends Plugin {
 
   async loadSettings() {
     const savedUserData = await this.loadData();
-    this.settings = { ...DEFAULT_SETTINGS, ...migrateSettings(savedUserData ?? {}) };
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...migrateSettings(savedUserData ?? {}),
+    };
 
     const defaultPathSettings = await getDefaultPathSettings(this);
 
@@ -362,7 +365,7 @@ export default class ScribePlugin extends Plugin {
         break;
 
       case PROCESS_PLATFORM.google:
-        ({ mermaidChart } = await llmFixMermaidChartGemini(
+        ({ mermaidChart } = await geminiFixMermaidChart(
           this.settings.googleAiApiKey,
           brokenMermaidChart,
           this.settings.googleModel,
@@ -609,7 +612,7 @@ export default class ScribePlugin extends Plugin {
           break;
 
         case PROCESS_PLATFORM.google:
-          llmSummary = await summarizeTranscriptGemini(
+          llmSummary = await geminiSummarizeTranscript(
             this.settings.googleAiApiKey,
             transcript,
             scribeOptions,

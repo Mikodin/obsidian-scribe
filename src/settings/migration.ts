@@ -1,4 +1,8 @@
-import { PROCESS_PLATFORM, TRANSCRIPT_PLATFORM, type ScribePluginSettings } from './settings';
+import {
+  PROCESS_PLATFORM,
+  TRANSCRIPT_PLATFORM,
+  type ScribePluginSettings,
+} from './settings';
 
 interface LegacySettings extends Partial<ScribePluginSettings> {
   useCustomOpenAiBaseUrl?: boolean;
@@ -8,8 +12,11 @@ interface LegacySettings extends Partial<ScribePluginSettings> {
  * Migrates settings saved by older plugin versions to the current shape.
  * Called once during loadSettings before merging with DEFAULT_SETTINGS.
  */
-export function migrateSettings(saved: LegacySettings): Partial<ScribePluginSettings> {
-  const migrated = { ...saved } as LegacySettings & Partial<ScribePluginSettings>;
+export function migrateSettings(
+  saved: LegacySettings,
+): Partial<ScribePluginSettings> {
+  const migrated = { ...saved } as LegacySettings &
+    Partial<ScribePluginSettings>;
 
   // v1 → v2: useCustomOpenAiBaseUrl replaced by processPlatform/transcriptPlatform
   if (migrated.useCustomOpenAiBaseUrl === true) {

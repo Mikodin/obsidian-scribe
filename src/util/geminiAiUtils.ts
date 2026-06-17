@@ -1,10 +1,36 @@
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { type BaseMessage, HumanMessage, SystemMessage } from 'langchain';
+/**
+ * Gemini (Google AI) LLM helpers used by Scribe.
+ *
+ * Talks to Gemini via its OpenAI-compatible endpoint at
+ * `https://generativelanguage.googleapis.com/v1beta/openai`. That compat
+ * layer only supports the `tools` (function-calling) path for structured
+ * output — not `response_format: { type: "json_schema" }`. We therefore
+ * always call `withStructuredOutput(schema, { method: "functionCalling" })`.
+ *
+ * Gemini also rejects request bodies whose only role is `system`: its native
+ * `generateContent` requires a `contents[]` turn. We therefore split the
+ * original prompt into a role-only system message and a user message that
+ * carries the transcript.
+ */
+
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import type { BaseMessage } from '@langchain/core/messages';
+import { ChatOpenAI } from '@langchain/openai';
 import type { ScribeOptions } from 'src';
 import { z } from 'zod';
+import { obsidianFetch } from './obsidianFetch';
+import {
+  mermaidRolePrompt,
+  mermaidUserPrompt,
+  scribeRolePrompt,
+  scribeUserPrompt,
+} from './scribePrompts';
 import { convertToSafeJsonKey } from './textUtil';
 
-export enum LLM_MODELS {
+export const GEMINI_BASE_URL =
+  'https://generativelanguage.googleapis.com/v1beta/openai';
+
+export enum GEMINI_LLM_MODELS {
   'gemini-flash-latest' = 'gemini-flash-latest',
   'gemini-flash-light-latest' = 'gemini-flash-light-latest',
   'gemini-2.5-flash' = 'gemini-2.5-flash',
@@ -14,74 +40,21 @@ export enum LLM_MODELS {
   'gemini-2.0-flash-lite' = 'gemini-2.0-flash-lite',
 }
 
-// interface TranscriptionOptions {
-//   audioFiles: FileLike[]; // FIX
-//   onChunkStart?: (i: number, totalChunks: number) => void;
-//   audioFileLanguage?: LanguageOptions;
-//   model;
-// }
-
-// async function transcribeAudioGemini({
-//   audioFiles,
-//   onChunkStart,
-//   audioFileLanguage,
-//   model,
-// }: TranscriptionOptions): Promise<string> {
-//   // Write function which uses langchain + google AI to transcribe audio.
-//   return transcript;
-// }
-
-export async function summarizeTranscriptGemini(
-  openAiKey: string,
+export async function geminiSummarizeTranscript(
+  geminiKey: string,
   transcript: string,
   { scribeOutputLanguage, activeNoteTemplate }: ScribeOptions,
-  llmModel: LLM_MODELS = LLM_MODELS['gemini-2.0-flash-lite'],
+  geminiModel: GEMINI_LLM_MODELS = GEMINI_LLM_MODELS['gemini-flash-latest'],
 ) {
-  const systemPrompt = `
-  You are "Scribe" an expert note-making AI for Obsidian you specialize in the Linking Your Thinking (LYK) strategy.
-  The following is the transcription generated from a recording of someone talking aloud or multiple people in a conversation.
-  There may be a lot of random things said given fluidity of conversation or thought process and the microphone's ability to pick up all audio.
-
-  The transcription may address you by calling you "Scribe" or saying "Hey Scribe" and asking you a question, they also may just allude to you by asking "you" to do something.
-  Give them the answers to this question
-
-  Give me notes in Markdown language on what was said, they should be
-  - Easy to understand
-  - Succinct
-  - Clean
-  - Logical
-  - Insightful
-
-  It will be nested under a h2 # tag, feel free to nest headers underneath it
-  Rules:
-  - Use actual line breaks in your Markdown output (e.g. newlines between bullet points, code block lines, etc.). Do NOT write literal \\n characters.
-  - Do not mention "the speaker" anywhere in your response.
-  - The notes should be written as if I were writing them.
-  - CRITICAL: Each JSON field value must contain ONLY the section content. Do NOT open the value with a heading that repeats the section name (e.g. never start a value with "## Summary" or "## Insights"). Jump straight into the content.
-  ${scribeOutputLanguage ? `- Please respond in ${scribeOutputLanguage} language.` : ''}
-  `;
-
-  const humanMessage = `
-  The following is the transcribed audio:
-  <transcript>
-  ${transcript}
-  </transcript>
-  `;
-
-  const model = new ChatGoogleGenerativeAI({
-    model: llmModel,
-    apiKey: openAiKey,
+  const model = new ChatOpenAI({
+    model: geminiModel,
+    apiKey: geminiKey,
     temperature: 0.5,
+    configuration: {
+      baseURL: GEMINI_BASE_URL,
+      fetch: obsidianFetch,
+    },
   });
-
-  const messages: BaseMessage[] = [
-    new SystemMessage(systemPrompt),
-    new HumanMessage(humanMessage),
-  ];
-
-  // Strip any leading markdown heading line Gemini injects before the content.
-  const stripLeadingHeading = (s: string) =>
-    s.replace(/^#{1,6}\s+[^\n]*\n?/, '').trimStart();
 
   const schema: Record<string, z.ZodType<string | null | undefined>> = {
     fileTitle: z
@@ -94,69 +67,59 @@ export async function summarizeTranscriptGemini(
   activeNoteTemplate.sections.forEach((section) => {
     const { sectionHeader, sectionInstructions, isSectionOptional } = section;
     schema[convertToSafeJsonKey(sectionHeader)] = isSectionOptional
-      ? z
-          .string()
-          .nullable()
-          .transform((v) => (v ? stripLeadingHeading(v) : v))
-          .describe(sectionInstructions)
-      : z.string().transform(stripLeadingHeading).describe(sectionInstructions);
+      ? z.string().nullable().describe(sectionInstructions)
+      : z.string().describe(sectionInstructions);
   });
 
   const structuredOutput = z.object(schema);
-  const structuredLlm = model.withStructuredOutput(structuredOutput);
 
-  console.debug('[gemini] → summarizeTranscript', llmModel, `transcript: ${transcript.length} chars`);
-  const result = (await structuredLlm.invoke(messages)) as Record<
-    string,
-    string
-  > & { fileTitle: string };
-  console.debug('[gemini] ← summarizeTranscript', `fileTitle: "${result.fileTitle}"`);
+  const systemParts: string[] = [scribeRolePrompt()];
+  if (scribeOutputLanguage) {
+    systemParts.push(`Please respond in ${scribeOutputLanguage} language.`);
+  }
 
-  return await result;
+  const messages: BaseMessage[] = [
+    new SystemMessage(systemParts.join('\n\n')),
+    new HumanMessage(scribeUserPrompt(transcript)),
+  ];
+
+  const structuredLlm = model.withStructuredOutput(structuredOutput, {
+    method: 'functionCalling',
+  });
+
+  return (await structuredLlm.invoke(messages)) as Record<string, string> & {
+    fileTitle: string;
+  };
 }
 
-export async function llmFixMermaidChartGemini(
-  googleAiKey: string,
+export async function geminiFixMermaidChart(
+  geminiKey: string,
   brokenMermaidChart: string,
-  llmModel: LLM_MODELS = LLM_MODELS['gemini-2.0-flash-lite'],
+  geminiModel: GEMINI_LLM_MODELS = GEMINI_LLM_MODELS['gemini-flash-latest'],
 ) {
-  const systemPrompt = `You are an expert in mermaid charts and Obsidian (the note taking app).
-You will be given a broken mermaid chart that isn't rendering correctly in Obsidian.
-There may be some new line characters, or tab characters, or special characters.
-Strip them out and only return a fully valid unicode Mermaid chart that will render properly in Obsidian.
-Remove any special characters in the nodes text that isn't valid.
-CRITICAL: Use actual newline characters between each line of the chart. Do NOT write literal \\n characters.`;
-
-  const humanMessage = `Please fix the following broken mermaid chart:
-
-<broken-mermaid-chart>
-${brokenMermaidChart}
-</broken-mermaid-chart>`;
-
-  const model = new ChatGoogleGenerativeAI({
-    model: llmModel,
-    apiKey: googleAiKey,
+  const model = new ChatOpenAI({
+    model: geminiModel,
+    apiKey: geminiKey,
     temperature: 0.3,
+    configuration: {
+      baseURL: GEMINI_BASE_URL,
+      fetch: obsidianFetch,
+    },
   });
 
   const messages: BaseMessage[] = [
-    new SystemMessage(systemPrompt),
-    new HumanMessage(humanMessage),
+    new SystemMessage(mermaidRolePrompt()),
+    new HumanMessage(mermaidUserPrompt(brokenMermaidChart)),
   ];
+
   const structuredOutput = z.object({
-    mermaidChart: z
-      .string()
-      .transform((s) => s.replace(/\\n/g, '\n'))
-      .describe(
-        'A fully valid unicode mermaid chart with real newline characters between each line',
-      ),
+    mermaidChart: z.string().describe('A fully valid unicode mermaid chart'),
   });
 
-  const structuredLlm = model.withStructuredOutput(structuredOutput);
+  const structuredLlm = model.withStructuredOutput(structuredOutput, {
+    method: 'functionCalling',
+  });
 
-  console.debug('[gemini] → fixMermaidChart', llmModel, `chart: ${brokenMermaidChart.length} chars`);
   const { mermaidChart } = await structuredLlm.invoke(messages);
-  console.debug('[gemini] ← fixMermaidChart', `result: ${mermaidChart.length} chars`);
-
   return { mermaidChart };
 }

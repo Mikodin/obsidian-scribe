@@ -51,20 +51,51 @@ export const obsidianFetch: Fetch = async (requestInfo, init) => {
 
   let bodyBuffer = req.body ? await req.arrayBuffer() : undefined;
 
-  // Groq (and some other providers) reject JSON schemas that include
-  // meta-fields like `$schema`, `title`, or `additionalProperties`.
-  // Strip them from response_format.json_schema.schema before sending.
+  // Groq, Gemini's OpenAI-compat endpoint, and several other providers reject
+  // JSON schemas that include meta-fields like `$schema`, `title`, or
+  // `additionalProperties`. Strip them from every schema the request carries:
+  // both `response_format.json_schema.schema` (OpenAI's strict structured
+  // output) and `tools[*].function.parameters` (function-calling, which is
+  // the only structured-output path supported by Gemini-compat).
   if (
     bodyBuffer &&
     (headersObj['content-type'] ?? '').includes('application/json')
   ) {
     try {
       const bodyJson = JSON.parse(new TextDecoder().decode(bodyBuffer));
-      const schema = bodyJson?.response_format?.json_schema?.schema;
-      if (schema && typeof schema === 'object') {
-        delete schema.$schema;
-        delete schema.title;
-        bodyBuffer = new TextEncoder().encode(JSON.stringify(bodyJson)).buffer as ArrayBuffer;
+      let touched = false;
+
+      const stripSchemaMeta = (schema: Record<string, unknown>) => {
+        if ('$schema' in schema) {
+          delete schema.$schema;
+          touched = true;
+        }
+        if ('title' in schema) {
+          delete schema.title;
+          touched = true;
+        }
+        if ('additionalProperties' in schema) {
+          delete schema.additionalProperties;
+          touched = true;
+        }
+      };
+
+      const jsonSchema = bodyJson?.response_format?.json_schema?.schema;
+      if (jsonSchema && typeof jsonSchema === 'object') {
+        stripSchemaMeta(jsonSchema);
+      }
+
+      const tools = Array.isArray(bodyJson?.tools) ? bodyJson.tools : [];
+      for (const tool of tools) {
+        const params = tool?.function?.parameters;
+        if (params && typeof params === 'object') {
+          stripSchemaMeta(params as Record<string, unknown>);
+        }
+      }
+
+      if (touched) {
+        bodyBuffer = new TextEncoder().encode(JSON.stringify(bodyJson))
+          .buffer as ArrayBuffer;
       }
     } catch {
       // Not valid JSON or no schema to strip — leave body unchanged
@@ -90,11 +121,29 @@ export const obsidianFetch: Fetch = async (requestInfo, init) => {
     '| body:',
     bodySize,
   );
+  if (
+    bodyBuffer &&
+    (headersObj['content-type'] ?? '').includes('application/json')
+  ) {
+    console.debug(
+      '[obsidianFetch] request body (parsed):',
+      fullJsonForLog(JSON.parse(new TextDecoder().decode(bodyBuffer))),
+    );
+  }
 
   const obsidianResponse = await requestUrl(obsidianParams);
   console.debug('[obsidianFetch] ←', obsidianResponse.status, url);
   if (obsidianResponse.status >= 400) {
     console.debug('[obsidianFetch] error body:', obsidianResponse.text);
+  } else if ((headersObj['content-type'] ?? '').includes('application/json')) {
+    try {
+      console.debug(
+        '[obsidianFetch] response body (parsed):',
+        fullJsonForLog(JSON.parse(obsidianResponse.text)),
+      );
+    } catch {
+      // not JSON — leave alone
+    }
   }
   return obsidianResponseToResponse(obsidianResponse);
 };
@@ -107,4 +156,54 @@ function obsidianResponseToResponse(
     statusText: '',
     headers: new Headers(obsidianResponse.headers),
   });
+}
+
+/**
+ * Compact JSON dump for console.debug:
+ *  - Stringifies keys + types at every level
+ *  - Truncates long string values (so the transcript / system prompt doesn't
+ *    drown the console) but keeps the first ~200 chars so you can see the
+ *    actual prompt + model + messages structure sent to Gemini.
+ *  - Drops tool/function `parameters` schemas (they're huge).
+ */
+function summarizeJsonForLog(value: unknown, maxStringLen = 200): unknown {
+  if (value === null || typeof value !== 'object') {
+    return typeof value === 'string' && value.length > maxStringLen
+      ? `${value.slice(0, maxStringLen)}… [+${value.length - maxStringLen} chars]`
+      : value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => summarizeJsonForLog(v, maxStringLen));
+  }
+  const obj = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (
+      (k === 'parameters' || k === 'json_schema') &&
+      v &&
+      typeof v === 'object'
+    ) {
+      const nested = v as Record<string, unknown>;
+      out[k] = `<omitted schema: keys=${Object.keys(nested).join(',')}>`;
+      continue;
+    }
+    out[k] = summarizeJsonForLog(v, maxStringLen);
+  }
+  return out;
+}
+
+/**
+ * Like summarizeJsonForLog but does NOT truncate strings or omit nested
+ * schemas — used when you want the full transcript/system-prompt contents
+ * in the console.
+ */
+function fullJsonForLog(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(fullJsonForLog);
+  const obj = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = fullJsonForLog(v);
+  }
+  return out;
 }

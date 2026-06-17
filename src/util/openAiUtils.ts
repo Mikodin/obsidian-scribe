@@ -1,10 +1,11 @@
 /**
- * This was heavily inspired by
- * https://github.com/drewmcdonald/obsidian-magic-mic
- * Thank you for traversing this in such a clean way
+ * OpenAI (and OpenAI-compatible custom-endpoint) LLM helpers used by Scribe.
+ *
+ * The Gemini-specific code path lives in `geminiAiUtils.ts`.
  */
 
 import { SystemMessage } from '@langchain/core/messages';
+import type { BaseMessage } from '@langchain/core/messages';
 import { ChatOpenAI } from '@langchain/openai';
 import { Notice } from 'obsidian';
 import OpenAI from 'openai';
@@ -14,6 +15,7 @@ import { z } from 'zod';
 import audioDataToChunkedFiles from './audioDataToChunkedFiles';
 import { LanguageOptions } from './consts';
 import { obsidianFetch } from './obsidianFetch';
+import { mermaidSystemPrompt, scribeSystemPrompt } from './scribePrompts';
 import { convertToSafeJsonKey } from './textUtil';
 
 export enum LLM_MODELS {
@@ -107,32 +109,6 @@ export async function summarizeTranscript(
   customBaseUrl?: string,
   customChatModel?: string,
 ) {
-  const systemPrompt = `
-  You are "Scribe" an expert note-making AI for Obsidian you specialize in the Linking Your Thinking (LYK) strategy.  
-  The following is the transcription generated from a recording of someone talking aloud or multiple people in a conversation. 
-  There may be a lot of random things said given fluidity of conversation or thought process and the microphone's ability to pick up all audio.  
-
-  The transcription may address you by calling you "Scribe" or saying "Hey Scribe" and asking you a question, they also may just allude to you by asking "you" to do something.
-  Give them the answers to this question
-
-  Give me notes in Markdown language on what was said, they should be
-  - Easy to understand
-  - Succinct
-  - Clean
-  - Logical
-  - Insightful
-  
-  It will be nested under a h2 # tag, feel free to nest headers underneath it
-  Rules:
-  - Do not include escaped new line characters
-  - Do not mention "the speaker" anywhere in your response.  
-  - The notes should be written as if I were writing them. 
-
-  The following is the transcribed audio:
-  <transcript>
-  ${transcript}
-  </transcript>
-  `;
   const modelToUse = customChatModel || llmModel;
   const model = new ChatOpenAI({
     model: modelToUse,
@@ -143,7 +119,9 @@ export async function summarizeTranscript(
       fetch: obsidianFetch,
     },
   });
-  const messages = [new SystemMessage(systemPrompt)];
+  const messages: BaseMessage[] = [
+    new SystemMessage(scribeSystemPrompt(transcript)),
+  ];
 
   if (scribeOutputLanguage) {
     messages.push(
@@ -183,19 +161,6 @@ export async function llmFixMermaidChart(
   customBaseUrl?: string,
   customChatModel?: string,
 ) {
-  const systemPrompt = `
-You are an expert in mermaid charts and Obsidian (the note taking app)
-Below is a <broken-mermaid-chart> that isn't rendering correctly in Obsidian
-There may be some new line characters, or tab characters, or special characters.  
-Strip them out and only return a fully valid unicode Mermaid chart that will render properly in Obsidian
-Remove any special characters in the nodes text that isn't valid.
-
-<broken-mermaid-chart>
-${brokenMermaidChart}
-</broken-mermaid-chart>
-
-Thank you
-  `;
   const modelToUse = customChatModel || llmModel;
   const model = new ChatOpenAI({
     model: modelToUse,
@@ -206,7 +171,9 @@ Thank you
       fetch: obsidianFetch,
     },
   });
-  const messages = [new SystemMessage(systemPrompt)];
+  const messages: BaseMessage[] = [
+    new SystemMessage(mermaidSystemPrompt(brokenMermaidChart)),
+  ];
   const structuredOutput = z.object({
     mermaidChart: z.string().describe('A fully valid unicode mermaid chart'),
   });

@@ -4,8 +4,8 @@ import { createRoot, type Root } from 'react-dom/client';
 
 import type ScribePlugin from 'src';
 import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
-import { LLM_MODELS as GOOGLE_MODELS } from 'src/util/geminiAiUtils';
-import { LLM_MODELS } from 'src/util/openAiUtils';
+import { GEMINI_LLM_MODELS } from 'src/util/geminiAiUtils';
+import { LLM_MODELS as OpenAiLLM_MODELS } from 'src/util/openAiUtils';
 import { useDebounce } from 'src/util/useDebounce';
 import { ProviderSettingsTab } from './ai-provider-settings-tab';
 import {
@@ -38,7 +38,7 @@ export interface ScribePluginSettings {
   transcriptDirectory: string;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
   isMultiSpeakerEnabled: boolean;
-  llmModel: LLM_MODELS;
+  llmModel: OpenAiLLM_MODELS;
   recordingFilenamePrefix: string;
   noteFilenamePrefix: string;
   dateFilenameFormat: string;
@@ -61,7 +61,7 @@ export interface ScribePluginSettings {
   // --- Process platform settings ---
   processPlatform: PROCESS_PLATFORM;
   // --- Gemini settings ---
-  googleModel: GOOGLE_MODELS;
+  googleModel: GEMINI_LLM_MODELS;
   googleAiApiKey: string;
 }
 
@@ -72,7 +72,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   transcriptDirectory: OBSIDIAN_PATHS.noteFolder,
   transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
   isMultiSpeakerEnabled: false,
-  llmModel: LLM_MODELS['gpt-4o'],
+  llmModel: OpenAiLLM_MODELS['gpt-4o'],
   noteFilenamePrefix: 'scribe-{{date}}-',
   recordingFilenamePrefix: 'scribe-recording-{{date}}',
   dateFilenameFormat: 'YYYY-MM-DD',
@@ -92,7 +92,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   customTranscriptModel: 'whisper-1',
   customChatModel: 'gpt-4o',
   processPlatform: PROCESS_PLATFORM.openAi,
-  googleModel: GOOGLE_MODELS['gemini-flash-latest'],
+  googleModel: GEMINI_LLM_MODELS['gemini-flash-latest'],
   googleAiApiKey: '',
 };
 
