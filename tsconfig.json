@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "paths": {
+      "src": ["./src/index.ts"],
+      "src/*": ["./src/*"]
+    },
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
     "target": "ES6",
     "allowJs": true,
     "noImplicitAny": true,
-    "moduleResolution": "node",
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,

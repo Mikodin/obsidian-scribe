@@ -10,7 +10,7 @@ import { CircleAlert } from './icons/icons';
 
 export class ScribeControlsModal extends Modal {
   plugin: ScribePlugin;
-  root: Root | null;
+  root: Root | null = null;
 
   constructor(plugin: ScribePlugin) {
     super(plugin.app);

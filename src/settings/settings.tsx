@@ -91,7 +91,7 @@ export async function handleSettingsTab(plugin: ScribePlugin) {
 
 export class ScribeSettingsTab extends PluginSettingTab {
   plugin: ScribePlugin;
-  reactRoot: Root | null;
+  reactRoot: Root | null = null;
 
   constructor(app: App, plugin: ScribePlugin) {
     super(app, plugin);

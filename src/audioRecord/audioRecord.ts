@@ -12,7 +12,7 @@ import {
 } from 'src/util/mimeType';
 
 export class AudioRecord {
-  mediaRecorder: MediaRecorder | null;
+  mediaRecorder: MediaRecorder | null = null;
   data: BlobPart[] = [];
   fileExtension: string;
   startTime: number | null = null;

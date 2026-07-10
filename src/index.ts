@@ -67,7 +67,7 @@ export interface ScribeOptions {
 export default class ScribePlugin extends Plugin {
   settings: ScribePluginSettings = DEFAULT_SETTINGS;
   state: ScribeState = DEFAULT_STATE;
-  controlModal: ScribeControlsModal;
+  controlModal!: ScribeControlsModal;
   private recordingNotice: Notice | null = null;
   private recordingNoticeIntervalId: number | null = null;
   public recordingNoticeStartTime: number | null = null;
@@ -219,7 +219,7 @@ export default class ScribePlugin extends Plugin {
         new Notice(`Scribe: ✅🗑️ Audio file deleted ${fileName}`);
       }
     } catch (error) {
-      new Notice(`Scribe: Something went wrong ${error.toString()}`);
+      new Notice(`Scribe: Something went wrong ${String(error)}`);
       console.error('Scribe: Something went wrong', error);
     } finally {
       await this.cleanup();
@@ -276,7 +276,7 @@ export default class ScribePlugin extends Plugin {
         scribeOptions: scribeOptions,
       });
     } catch (error) {
-      new Notice(`Scribe: Something went wrong ${error.toString()}`);
+      new Notice(`Scribe: Something went wrong ${String(error)}`);
       console.error('Scribe: Something went wrong', error);
     } finally {
       await this.cleanup();
@@ -324,7 +324,7 @@ export default class ScribePlugin extends Plugin {
         });
       }
     } catch (error) {
-      new Notice(`Scribe: Something went wrong ${error.toString()}`);
+      new Notice(`Scribe: Something went wrong ${String(error)}`);
     } finally {
       await this.cleanup();
     }
@@ -499,7 +499,7 @@ export default class ScribePlugin extends Plugin {
         `Scribe: 🎧 🛑 Something went wrong trying to Transcribe w/  ${
           this.settings.transcriptPlatform
         }
-        ${error.toString()}`,
+        ${String(error)}`,
       );
 
       console.error;
