@@ -16,11 +16,27 @@ import { LanguageOptions } from './consts';
 import { convertToSafeJsonKey } from './textUtil';
 
 export enum LLM_MODELS {
+  'gpt-5.6-sol' = 'gpt-5.6-sol',
+  'gpt-5.6-terra' = 'gpt-5.6-terra',
+  'gpt-5.6-luna' = 'gpt-5.6-luna',
+  'gpt-5.5' = 'gpt-5.5',
+  'gpt-5.1' = 'gpt-5.1',
+  'gpt-5' = 'gpt-5',
+  'gpt-5-mini' = 'gpt-5-mini',
+  'gpt-5-nano' = 'gpt-5-nano',
   'gpt-4.1' = 'gpt-4.1',
   'gpt-4.1-mini' = 'gpt-4.1-mini',
   'gpt-4o' = 'gpt-4o',
   'gpt-4o-mini' = 'gpt-4o-mini',
   'gpt-4-turbo' = 'gpt-4-turbo',
+}
+
+/**
+ * GPT-5 family and o-series reasoning models only accept the default
+ * temperature (1) on the Chat Completions API and 400 on anything else.
+ */
+function supportsCustomTemperature(model: string) {
+  return !/^(gpt-5|o\d)/.test(model);
 }
 
 const MAX_CHUNK_SIZE = 25 * 1024 * 1024;
@@ -105,7 +121,7 @@ export async function summarizeTranscript(
     activeNoteTemplate,
     additionalSystemPrompt,
   }: ScribeOptions,
-  llmModel: LLM_MODELS = LLM_MODELS['gpt-4o'],
+  llmModel: LLM_MODELS = LLM_MODELS['gpt-5.6-terra'],
   customBaseUrl?: string,
   customChatModel?: string,
 ) {
@@ -139,7 +155,7 @@ export async function summarizeTranscript(
   const model = new ChatOpenAI({
     model: modelToUse,
     apiKey: openAiKey,
-    temperature: 0.5,
+    ...(supportsCustomTemperature(modelToUse) && { temperature: 0.5 }),
     ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
   });
   const messages = [new SystemMessage(systemPrompt)];
@@ -186,7 +202,7 @@ export async function summarizeTranscript(
 export async function llmFixMermaidChart(
   openAiKey: string,
   brokenMermaidChart: string,
-  llmModel: LLM_MODELS = LLM_MODELS['gpt-4o'],
+  llmModel: LLM_MODELS = LLM_MODELS['gpt-5.6-terra'],
   customBaseUrl?: string,
   customChatModel?: string,
 ) {
@@ -207,7 +223,7 @@ Thank you
   const model = new ChatOpenAI({
     model: modelToUse,
     apiKey: openAiKey,
-    temperature: 0.3,
+    ...(supportsCustomTemperature(modelToUse) && { temperature: 0.3 }),
     ...(customBaseUrl && { configuration: { baseURL: customBaseUrl } }),
   });
   const messages = [new SystemMessage(systemPrompt)];

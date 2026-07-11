@@ -204,11 +204,11 @@ export const AiModelSettings: React.FC<{
 
           <SettingsItem
             name="Custom chat model"
-            description="The model name to use for chat/summarization (e.g., gpt-4, llama-3.1-8b-instruct, etc.)"
+            description="The model name to use for chat/summarization (e.g., gpt-5.6-terra, llama-3.1-8b-instruct, etc.)"
             control={
               <input
                 type="text"
-                placeholder="gpt-4o"
+                placeholder="gpt-5.6-terra"
                 value={customChatModel}
                 onChange={(e) => handleCustomChatModelChange(e.target.value)}
                 className="text-input"
