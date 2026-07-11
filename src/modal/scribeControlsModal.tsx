@@ -67,6 +67,7 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     transcriptPlatform: plugin.settings.transcriptPlatform,
     llmModel: plugin.settings.llmModel,
     activeNoteTemplate: plugin.settings.activeNoteTemplate,
+    additionalSystemPrompt: '',
   });
 
   useEffect(() => {

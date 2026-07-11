@@ -62,6 +62,7 @@ export interface ScribeOptions {
   transcriptPlatform: TRANSCRIPT_PLATFORM;
   llmModel: LLM_MODELS;
   activeNoteTemplate: ScribeTemplate;
+  additionalSystemPrompt?: string;
 }
 
 export default class ScribePlugin extends Plugin {

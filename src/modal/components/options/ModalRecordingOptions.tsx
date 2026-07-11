@@ -11,6 +11,7 @@ import {
 } from 'src/util/consts';
 import { ButtonComponent } from 'obsidian';
 import type { ScribeTemplate } from 'src/settings/components/NoteTemplateSettings';
+import { ModalSystemPromptOption } from './ModalSystemPromptOption';
 
 export function ModalRecordingOptions({
   options,
@@ -91,6 +92,8 @@ export function ModalRecordingOptions({
           Multi-speaker enabled
         </label>
       )}
+
+      <ModalSystemPromptOption options={options} setOptions={setOptions} />
 
       <SettingsItem
         name="Active template"

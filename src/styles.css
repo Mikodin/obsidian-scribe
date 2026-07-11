@@ -160,6 +160,19 @@ If your plugin does not need CSS, delete this file.
   }
 }
 
+.scribe-system-prompt-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 0.5em;
+  margin: 0.5em 0;
+
+  textarea {
+    width: 100%;
+  }
+}
+
 button[role="tab"].settings-tab {
   border: 0;
   background-color: transparent;
