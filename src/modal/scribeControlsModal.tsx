@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type ScribePlugin from 'src';
 import type { ScribeOptions } from 'src';
+import { resolveLlmConfig } from 'src/aiProviders/llm/llmAdapter';
+import { getMissingApiKeys } from 'src/aiProviders/providerMetadata';
 import { ModalOptionsContainer } from './components/ModalOptionsContainer';
 import { ModalRecordingButtons } from './components/ModalRecordingButtons';
 import { ModalRecordingTimer } from './components/ModalRecordingTimer';
@@ -65,7 +67,8 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     audioFileLanguage: plugin.settings.audioFileLanguage,
     scribeOutputLanguage: plugin.settings.scribeOutputLanguage,
     transcriptPlatform: plugin.settings.transcriptPlatform,
-    llmModel: plugin.settings.llmModel,
+    processPlatform: plugin.settings.processPlatform,
+    llmModel: resolveLlmConfig(plugin.settings).model,
     activeNoteTemplate: plugin.settings.activeNoteTemplate,
     additionalSystemPrompt: '',
   });
@@ -86,7 +89,11 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     };
   }, [isActive, plugin]);
 
-  const hasOpenAiApiKey = Boolean(plugin.settings.openAiApiKey);
+  const missingApiKeys = getMissingApiKeys(plugin.settings, {
+    transcriptPlatform: scribeOptions.transcriptPlatform,
+    processPlatform: scribeOptions.processPlatform,
+  });
+  const hasRequiredApiKeys = missingApiKeys.length === 0;
 
   const handleStart = async () => {
     try {
@@ -136,19 +143,25 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
 
   return (
     <div className="scribe-modal-container">
-      {!hasOpenAiApiKey && (
+      {!hasRequiredApiKeys && (
         <div className="scribe-settings-warning-container">
           <h1>
-            ️<CircleAlert /> Missing Open AI API key
+            ️<CircleAlert /> Missing API key
+            {missingApiKeys.length > 1 ? 's' : ''}
           </h1>
           <h2 className="scribe-settings-warning">
-            Please enter the key in the plugin settings.
+            Please enter the key{missingApiKeys.length > 1 ? 's' : ''} in the
+            plugin settings.
           </h2>
-          <p>You can get your API key here</p>
-          <a href="https://platform.openai.com/settings">OpenAI Platform</a>
+          {missingApiKeys.map((missingKey) => (
+            <p key={missingKey.provider}>
+              {missingKey.provider}:{' '}
+              <a href={missingKey.consoleUrl}>get your API key here</a>
+            </p>
+          ))}
         </div>
       )}
-      {hasOpenAiApiKey && (
+      {hasRequiredApiKeys && (
         <>
           <ModalRecordingTimer elapsedTimeMs={elapsedRecordingTimeMs} />
 

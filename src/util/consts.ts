@@ -4,6 +4,24 @@ export enum RECORDING_STATUS {
   PAUSED = 'PAUSED',
 }
 
+export enum TRANSCRIPT_PLATFORM {
+  assemblyAi = 'assemblyAi',
+  openAi = 'openAi',
+  customOpenAi = 'customOpenAi',
+  elevenLabs = 'elevenLabs',
+  deepgram = 'deepgram',
+  mistral = 'mistral',
+  google = 'google',
+}
+
+export enum PROCESS_PLATFORM {
+  openAi = 'openAi',
+  anthropic = 'anthropic',
+  google = 'google',
+  openRouter = 'openRouter',
+  customOpenAi = 'customOpenAi',
+}
+
 export enum LanguageOptions {
   auto = 'auto',
   en = 'en',

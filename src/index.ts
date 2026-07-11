@@ -1,19 +1,31 @@
 import { Notice, normalizePath, Plugin, type TFile } from 'obsidian';
-import type OpenAI from 'openai';
 
+import {
+  createLlmAdapter,
+  resolveLlmConfig,
+} from './aiProviders/llm/llmAdapter';
+import {
+  getMissingApiKeys,
+  LLM_PROVIDERS,
+  TRANSCRIPT_PROVIDERS,
+} from './aiProviders/providerMetadata';
+import { transcribeAudio } from './aiProviders/transcription/transcriptionAdapter';
 import { AudioRecord } from './audioRecord/audioRecord';
 import { handleCommands } from './commands/commands';
 import { ScribeControlsModal } from './modal/scribeControlsModal';
 import { handleRibbon } from './ribbon/ribbon';
 import type { ScribeTemplate } from './settings/components/NoteTemplateSettings';
+import { migrateSettings } from './settings/migration';
 import {
   DEFAULT_SETTINGS,
   handleSettingsTab,
   type ScribePluginSettings,
-  TRANSCRIPT_PLATFORM,
 } from './settings/settings';
-import { transcribeAudioWithAssemblyAi } from './util/assemblyAiUtil';
-import type { LanguageOptions } from './util/consts';
+import type {
+  LanguageOptions,
+  PROCESS_PLATFORM,
+  TRANSCRIPT_PLATFORM,
+} from './util/consts';
 import { formatFilenamePrefix } from './util/filenameUtils';
 import {
   appendTextToNote,
@@ -26,12 +38,6 @@ import {
   mimeTypeToFileExtension,
   type SupportedMimeType,
 } from './util/mimeType';
-import {
-  chunkAndTranscribeWithOpenAi,
-  type LLM_MODELS,
-  llmFixMermaidChart,
-  summarizeTranscript,
-} from './util/openAiUtils';
 import { getDefaultPathSettings } from './util/pathUtils';
 import { convertToSafeJsonKey, extractMermaidChart } from './util/textUtil';
 
@@ -39,7 +45,6 @@ export interface ScribeState {
   isOpen: boolean;
   counter: number;
   audioRecord: AudioRecord | null;
-  openAiClient: OpenAI | null;
   isProcessing: boolean;
 }
 
@@ -47,7 +52,6 @@ const DEFAULT_STATE: ScribeState = {
   isOpen: false,
   counter: 0,
   audioRecord: null,
-  openAiClient: null,
   isProcessing: false,
 };
 
@@ -60,7 +64,8 @@ export interface ScribeOptions {
   audioFileLanguage: LanguageOptions;
   scribeOutputLanguage: Exclude<LanguageOptions, 'auto'>;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
-  llmModel: LLM_MODELS;
+  processPlatform: PROCESS_PLATFORM;
+  llmModel: string;
   activeNoteTemplate: ScribeTemplate;
   additionalSystemPrompt?: string;
 }
@@ -93,15 +98,21 @@ export default class ScribePlugin extends Plugin {
 
   async loadSettings() {
     const savedUserData: ScribePluginSettings = await this.loadData();
-    this.settings = { ...DEFAULT_SETTINGS, ...savedUserData };
+    const { settings: migratedUserData, didMigrate } =
+      migrateSettings(savedUserData);
+    this.settings = { ...DEFAULT_SETTINGS, ...migratedUserData };
+
+    if (didMigrate) {
+      await this.saveData(this.settings);
+    }
 
     const defaultPathSettings = await getDefaultPathSettings(this);
 
-    if (!this.settings.openAiApiKey) {
+    for (const missingKey of getMissingApiKeys(this.settings)) {
       console.error(
-        'OpenAI API key is needed in Scribes settings - https://platform.openai.com/settings',
+        `${missingKey.provider} API key is needed in Scribes settings - ${missingKey.consoleUrl}`,
       );
-      new Notice('⚠️ Scribe: OpenAI API key is missing for Scribe');
+      new Notice(`⚠️ Scribe: ${missingKey.provider} API key is missing`);
     }
 
     if (!this.settings.recordingDirectory) {
@@ -182,7 +193,8 @@ export default class ScribePlugin extends Plugin {
       audioFileLanguage: this.settings.audioFileLanguage,
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
       transcriptPlatform: this.settings.transcriptPlatform,
-      llmModel: this.settings.llmModel,
+      processPlatform: this.settings.processPlatform,
+      llmModel: resolveLlmConfig(this.settings).model,
       activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
@@ -238,7 +250,8 @@ export default class ScribePlugin extends Plugin {
       audioFileLanguage: this.settings.audioFileLanguage,
       scribeOutputLanguage: this.settings.scribeOutputLanguage,
       transcriptPlatform: this.settings.transcriptPlatform,
-      llmModel: this.settings.llmModel,
+      processPlatform: this.settings.processPlatform,
+      llmModel: resolveLlmConfig(this.settings).model,
       activeNoteTemplate: this.settings.activeNoteTemplate,
     },
   ) {
@@ -295,21 +308,11 @@ export default class ScribePlugin extends Plugin {
 
       let fixedMermaidChart: string | undefined;
       if (brokenMermaidChart) {
-        const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
-          ? this.settings.customOpenAiBaseUrl
-          : undefined;
-        const customChatModel = this.settings.useCustomOpenAiBaseUrl
-          ? this.settings.customChatModel
-          : undefined;
+        const llmConfig = resolveLlmConfig(this.settings);
+        const llmAdapter = createLlmAdapter(llmConfig);
 
         fixedMermaidChart = (
-          await llmFixMermaidChart(
-            this.settings.openAiApiKey,
-            brokenMermaidChart,
-            this.settings.llmModel,
-            customBaseUrl,
-            customChatModel,
-          )
+          await llmAdapter.fixMermaidChart(brokenMermaidChart)
         ).mermaidChart;
       }
 
@@ -391,9 +394,14 @@ export default class ScribePlugin extends Plugin {
 
     await appendTextToNote(this, note, '# Audio in progress');
 
+    const audioExtension = audioRecordingFile.extension;
+    const audioMimeType =
+      audioExtension === 'mp3' ? 'audio/mpeg' : `audio/${audioExtension}`;
+
     const transcript = await this.handleTranscription(
       audioRecordingBuffer,
       scribeOptions,
+      audioMimeType,
     );
 
     const inProgressHeaderToReplace = isAppendToActiveFile
@@ -462,48 +470,45 @@ export default class ScribePlugin extends Plugin {
   async handleTranscription(
     audioBuffer: ArrayBuffer,
     scribeOptions: ScribeOptions,
+    audioMimeType: string,
   ) {
+    const provider = TRANSCRIPT_PROVIDERS[scribeOptions.transcriptPlatform];
     try {
       if (this.settings.isDisableLlmTranscription) {
         new Notice('Scribe: 🎧 Transcription is disabled in settings');
         return '';
       }
 
-      new Notice(
-        `Scribe: 🎧 Beginning transcription w/ ${this.settings.transcriptPlatform}`,
-      );
-      const transcript =
-        this.settings.transcriptPlatform === TRANSCRIPT_PLATFORM.assemblyAi
-          ? await transcribeAudioWithAssemblyAi(
-              this.settings.assemblyAiApiKey,
-              audioBuffer,
-              scribeOptions,
-            )
-          : await chunkAndTranscribeWithOpenAi(
-              this.settings.openAiApiKey,
-              audioBuffer,
-              scribeOptions,
-              this.settings.useCustomOpenAiBaseUrl
-                ? this.settings.customOpenAiBaseUrl
-                : undefined,
-              this.settings.useCustomOpenAiBaseUrl
-                ? this.settings.customTranscriptModel
-                : undefined,
-            );
+      if (!this.settings[provider.apiKeySettingsField]) {
+        new Notice(
+          `Scribe: ⚠️ Missing ${provider.displayName} API key — add it in settings`,
+        );
+        throw new Error(`Missing ${provider.displayName} API key`);
+      }
 
       new Notice(
-        `Scribe: 🎧 Completed transcription  w/ ${this.settings.transcriptPlatform}`,
+        `Scribe: 🎧 Beginning transcription w/ ${provider.displayName}`,
+      );
+      const transcript = await transcribeAudio(
+        this.settings,
+        scribeOptions,
+        audioBuffer,
+        audioMimeType,
+      );
+
+      new Notice(
+        `Scribe: 🎧 Completed transcription  w/ ${provider.displayName}`,
       );
       return transcript;
     } catch (error) {
       new Notice(
         `Scribe: 🎧 🛑 Something went wrong trying to Transcribe w/  ${
-          this.settings.transcriptPlatform
+          provider.displayName
         }
         ${String(error)}`,
       );
 
-      console.error;
+      console.error('Scribe: transcription failed', error);
       throw error;
     }
   }
@@ -512,22 +517,25 @@ export default class ScribePlugin extends Plugin {
     transcript: string,
     scribeOptions: ScribeOptions,
   ) {
-    new Notice('Scribe: 🧠 Sending to LLM to summarize');
+    const llmConfig = resolveLlmConfig(this.settings, {
+      platform: scribeOptions.processPlatform,
+      model: scribeOptions.llmModel,
+    });
+    const provider = LLM_PROVIDERS[llmConfig.platform];
 
-    const customBaseUrl = this.settings.useCustomOpenAiBaseUrl
-      ? this.settings.customOpenAiBaseUrl
-      : undefined;
-    const customChatModel = this.settings.useCustomOpenAiBaseUrl
-      ? this.settings.customChatModel
-      : undefined;
+    if (!llmConfig.apiKey) {
+      new Notice(
+        `Scribe: ⚠️ Missing ${provider.displayName} API key — add it in settings`,
+      );
+      throw new Error(`Missing ${provider.displayName} API key`);
+    }
 
-    const llmSummary = await summarizeTranscript(
-      this.settings.openAiApiKey,
+    new Notice(`Scribe: 🧠 Sending to ${provider.displayName} to summarize`);
+
+    const llmAdapter = createLlmAdapter(llmConfig);
+    const llmSummary = await llmAdapter.summarizeTranscript(
       transcript,
       scribeOptions,
-      this.settings.llmModel,
-      customBaseUrl,
-      customChatModel,
     );
 
     new Notice('Scribe: 🧠 LLM summation complete');

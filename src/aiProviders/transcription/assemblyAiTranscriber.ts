@@ -4,7 +4,7 @@ import {
   type TranscriptParagraph,
 } from 'assemblyai';
 import type { ScribeOptions } from 'src';
-import { LanguageOptions } from './consts';
+import { LanguageOptions } from 'src/util/consts';
 
 export async function transcribeAudioWithAssemblyAi(
   apiKey: string,
