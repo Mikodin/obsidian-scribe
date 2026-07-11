@@ -100,7 +100,11 @@ async function transcribeAudio(
 export async function summarizeTranscript(
   openAiKey: string,
   transcript: string,
-  { scribeOutputLanguage, activeNoteTemplate }: ScribeOptions,
+  {
+    scribeOutputLanguage,
+    activeNoteTemplate,
+    additionalSystemPrompt,
+  }: ScribeOptions,
   llmModel: LLM_MODELS = LLM_MODELS['gpt-4o'],
   customBaseUrl?: string,
   customChatModel?: string,
@@ -143,6 +147,14 @@ export async function summarizeTranscript(
   if (scribeOutputLanguage) {
     messages.push(
       new SystemMessage(`Please respond in ${scribeOutputLanguage} language`),
+    );
+  }
+
+  if (additionalSystemPrompt?.trim()) {
+    messages.push(
+      new SystemMessage(
+        `The user has provided additional context and instructions for this summary:\n<user-context>\n${additionalSystemPrompt}\n</user-context>`,
+      ),
     );
   }
 
