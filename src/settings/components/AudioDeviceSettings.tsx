@@ -27,7 +27,9 @@ function AudioDeviceSettings() {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
-        stream.getTracks().forEach((track) => track.stop());
+        stream.getTracks().forEach((track) => {
+          track.stop();
+        });
 
         // Get list of audio input devices
         const devices = await navigator.mediaDevices.enumerateDevices();

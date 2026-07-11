@@ -6,14 +6,15 @@ Obsidian plugin (TypeScript + React) that records voice, transcribes audio (Open
 
 ## Available commands
 
-### After writing code - Format and Build
+### After writing code - Format, Lint, and Build
 
 After writing code, always run these commands before completing the task:
 
 1. `npm run format:write` — auto-format with Biome
-2. `npm run build:prod` — typecheck + production build
+2. `npm run lint:write` — lint with Biome (use `npm run lint:fix` to auto-apply safe fixes)
+3. `npm run build:prod` — typecheck + production build
 
-Both must pass cleanly. Fix any errors before finishing.
+All three must pass cleanly. Fix any errors before finishing.
 
 Entry: `main.ts` → re-exports default class from `src/index.ts`. Output: `build/main.js` (CJS bundle).
 

@@ -1,14 +1,6 @@
-import { useEffect } from 'react';
 import type { ScribeOptions } from 'src';
-import type ScribePlugin from 'src';
 import { TRANSCRIPT_PROVIDERS } from 'src/aiProviders/providerMetadata';
 import { SettingsItem } from 'src/settings/components/SettingsItem';
-import {
-  LanguageDisplayNames,
-  LanguageOptions,
-  type OutputLanguageOptions,
-} from 'src/util/consts';
-import { ButtonComponent } from 'obsidian';
 import type { ScribeTemplate } from 'src/settings/components/NoteTemplateSettings';
 import { ModalSystemPromptOption } from './ModalSystemPromptOption';
 

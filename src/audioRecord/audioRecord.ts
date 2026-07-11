@@ -99,7 +99,7 @@ export class AudioRecord {
   }
 
   async resumeRecording() {
-    if (!this.mediaRecorder || this.mediaRecorder.state !== 'paused') {
+    if (this.mediaRecorder?.state !== 'paused') {
       console.error('There is no mediaRecorder, cannot resume resumeRecording');
       throw new Error('There is no paused mediaRecorder, cannot resume');
     }
@@ -110,7 +110,7 @@ export class AudioRecord {
   }
 
   async pauseRecording() {
-    if (!this.mediaRecorder || this.mediaRecorder.state !== 'recording') {
+    if (this.mediaRecorder?.state !== 'recording') {
       console.error('There is no mediaRecorder, cannot pauseRecording');
       throw new Error('There is no recording mediaRecorder, cannot pause');
     }

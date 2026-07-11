@@ -5,7 +5,7 @@ import { useDebounce } from 'src/util/useDebounce';
 import type ScribePlugin from 'src';
 
 import {
-  ANTHROPIC_MODELS,
+  type ANTHROPIC_MODELS,
   DEFAULT_ANTHROPIC_MODEL,
 } from 'src/aiProviders/llm/anthropicLlm';
 import {

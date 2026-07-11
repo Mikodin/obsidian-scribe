@@ -1,13 +1,8 @@
-import type ScribePlugin from 'src';
 import {
   useSettings,
   useSettingsUpdater,
 } from '../provider/SettingsFormProvider';
 import type { ScribePluginSettings } from '../settings';
-
-interface UseSettingsFormProps {
-  plugin: ScribePlugin;
-}
 
 interface RegisterOptions<K extends keyof ScribePluginSettings> {
   displayValue?(value: ScribePluginSettings[K]): ScribePluginSettings[K];

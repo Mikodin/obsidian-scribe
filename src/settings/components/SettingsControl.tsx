@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactNode } from 'react';
 import type { ScribePluginSettings } from '../settings';
 
 interface SettingsToggleProps<K extends keyof ScribePluginSettings>
@@ -21,21 +21,16 @@ export function SettingsToggle(
 
   return (
     <SettingsControl {...props}>
-      <div
-        className={`checkbox-container ${value ? 'is-enabled' : ''}`}
-        onClick={(e) => {
-          onChange(!value);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            onChange(!value);
-          }
-        }}
-      >
+      <div className={`checkbox-container ${value ? 'is-enabled' : ''}`}>
         <input
           type="checkbox"
           checked={value}
           onChange={() => onChange(!value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              onChange(!value);
+            }
+          }}
         />
       </div>
     </SettingsControl>
@@ -140,23 +135,21 @@ export function SettingsCombobox(
 
   return (
     <SettingsControl {...props}>
-      <>
-        <input
-          type="text"
-          list={datalistId}
-          defaultValue={value}
-          placeholder={placeholder}
-          onChange={(e) => {
-            const value = e.currentTarget.value;
-            onChange(value);
-          }}
-        />
-        <datalist id={datalistId}>
-          {options.map((option) => (
-            <option key={option} value={option} />
-          ))}
-        </datalist>
-      </>
+      <input
+        type="text"
+        list={datalistId}
+        defaultValue={value}
+        placeholder={placeholder}
+        onChange={(e) => {
+          const value = e.currentTarget.value;
+          onChange(value);
+        }}
+      />
+      <datalist id={datalistId}>
+        {options.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
     </SettingsControl>
   );
 }
@@ -166,7 +159,7 @@ interface SettingsControlProps<K extends keyof ScribePluginSettings> {
   name: string;
   description?: string;
   value: ScribePluginSettings[K];
-  children: ReactElement;
+  children: ReactNode;
 }
 
 /**
@@ -175,9 +168,7 @@ interface SettingsControlProps<K extends keyof ScribePluginSettings> {
  */
 function SettingsControl({
   description,
-  id,
   name,
-  value,
   children,
 }: SettingsControlProps<keyof ScribePluginSettings>) {
   return (
