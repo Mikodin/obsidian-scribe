@@ -1,9 +1,14 @@
 import fs from 'node:fs';
+import { builtinModules } from 'node:module';
 import path from 'node:path';
 import esbuild from 'esbuild';
 import process from 'node:process';
-import builtins from 'builtin-modules';
 import dotenv from 'dotenv';
+
+// builtin-modules@5 is ESM-only and its default import resolved to undefined
+// here, silently bundling node builtins (see PR #102 post-mortem). Node's own
+// list covers both bare and `node:`-prefixed specifiers.
+const builtins = [...builtinModules, ...builtinModules.map((m) => `node:${m}`)];
 
 dotenv.config();
 

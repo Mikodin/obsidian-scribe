@@ -4,24 +4,31 @@ import { useDebounce } from 'src/util/useDebounce';
 
 import type ScribePlugin from 'src';
 
-import { LLM_MODELS } from 'src/util/openAiUtils';
+import {
+  ANTHROPIC_MODELS,
+  DEFAULT_ANTHROPIC_MODEL,
+} from 'src/aiProviders/llm/anthropicLlm';
+import {
+  DEFAULT_GEMINI_MODEL,
+  type GEMINI_MODELS,
+  LLM_MODELS,
+} from 'src/aiProviders/llm/openAiCompatibleLlm';
 
 import { useState } from 'react';
-import { LanguageOptions, type OutputLanguageOptions } from 'src/util/consts';
+import {
+  LanguageOptions,
+  type OutputLanguageOptions,
+  PROCESS_PLATFORM,
+  TRANSCRIPT_PLATFORM,
+} from 'src/util/consts';
 import GeneralSettingsTab from './GeneralSettingsTab';
 import ProviderSettingsTab from './ProviderSettingsTab';
-import { AiModelSettings } from './components/AiModelSettings';
 import {
   DEFAULT_TEMPLATE,
   NoteTemplateSettings,
   type ScribeTemplate,
 } from './components/NoteTemplateSettings';
 import { SettingsFormProvider } from './provider/SettingsFormProvider';
-
-export enum TRANSCRIPT_PLATFORM {
-  assemblyAi = 'assemblyAi',
-  openAi = 'openAi',
-}
 
 export enum OBSIDIAN_PATHS {
   noteFolder = 'matchObsidianNoteFolder',
@@ -30,11 +37,21 @@ export enum OBSIDIAN_PATHS {
 export interface ScribePluginSettings {
   assemblyAiApiKey: string;
   openAiApiKey: string;
+  anthropicApiKey: string;
+  googleApiKey: string;
+  openRouterApiKey: string;
+  elevenLabsApiKey: string;
+  deepgramApiKey: string;
+  mistralApiKey: string;
   recordingDirectory: string;
   transcriptDirectory: string;
   transcriptPlatform: TRANSCRIPT_PLATFORM;
+  processPlatform: PROCESS_PLATFORM;
   isMultiSpeakerEnabled: boolean;
   llmModel: LLM_MODELS;
+  anthropicModel: ANTHROPIC_MODELS;
+  geminiModel: GEMINI_MODELS;
+  openRouterModel: string;
   recordingFilenamePrefix: string;
   noteFilenamePrefix: string;
   dateFilenameFormat: string;
@@ -49,8 +66,7 @@ export interface ScribePluginSettings {
   isFrontMatterLinkToScribe: boolean;
   selectedAudioDeviceId: string;
   audioFileFormat: 'webm' | 'mp3';
-  // Custom OpenAI settings
-  useCustomOpenAiBaseUrl: boolean;
+  // Custom OpenAI-compatible endpoint settings
   customOpenAiBaseUrl: string;
   customTranscriptModel: string;
   customChatModel: string;
@@ -59,11 +75,21 @@ export interface ScribePluginSettings {
 export const DEFAULT_SETTINGS: ScribePluginSettings = {
   assemblyAiApiKey: '',
   openAiApiKey: '',
+  anthropicApiKey: '',
+  googleApiKey: '',
+  openRouterApiKey: '',
+  elevenLabsApiKey: '',
+  deepgramApiKey: '',
+  mistralApiKey: '',
   recordingDirectory: OBSIDIAN_PATHS.resourceFolder,
   transcriptDirectory: OBSIDIAN_PATHS.noteFolder,
   transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
+  processPlatform: PROCESS_PLATFORM.openAi,
   isMultiSpeakerEnabled: false,
   llmModel: LLM_MODELS['gpt-5.6-terra'],
+  anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+  geminiModel: DEFAULT_GEMINI_MODEL,
+  openRouterModel: 'anthropic/claude-sonnet-5',
   noteFilenamePrefix: 'scribe-{{date}}-',
   recordingFilenamePrefix: 'scribe-recording-{{date}}',
   dateFilenameFormat: 'YYYY-MM-DD',
@@ -78,8 +104,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   isFrontMatterLinkToScribe: true,
   selectedAudioDeviceId: '',
   audioFileFormat: 'webm',
-  // Custom OpenAI settings
-  useCustomOpenAiBaseUrl: false,
+  // Custom OpenAI-compatible endpoint settings
   customOpenAiBaseUrl: '',
   customTranscriptModel: 'whisper-1',
   customChatModel: 'gpt-4o',
@@ -118,6 +143,12 @@ export class ScribeSettingsTab extends PluginSettingTab {
           ...DEFAULT_SETTINGS,
           openAiApiKey: this.plugin.settings.openAiApiKey,
           assemblyAiApiKey: this.plugin.settings.assemblyAiApiKey,
+          anthropicApiKey: this.plugin.settings.anthropicApiKey,
+          googleApiKey: this.plugin.settings.googleApiKey,
+          openRouterApiKey: this.plugin.settings.openRouterApiKey,
+          elevenLabsApiKey: this.plugin.settings.elevenLabsApiKey,
+          deepgramApiKey: this.plugin.settings.deepgramApiKey,
+          mistralApiKey: this.plugin.settings.mistralApiKey,
         };
 
         this.saveSettings();
@@ -162,15 +193,7 @@ const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
             case SettingsTabsId.GENERAL:
               return <GeneralSettingsTab />;
             case SettingsTabsId.AI_PROVIDERS:
-              return (
-                <>
-                  <ProviderSettingsTab />
-                  <AiModelSettings
-                    plugin={plugin}
-                    saveSettings={debouncedSaveSettings}
-                  />
-                </>
-              );
+              return <ProviderSettingsTab />;
             case SettingsTabsId.TEMPLATES:
               return (
                 <NoteTemplateSettings

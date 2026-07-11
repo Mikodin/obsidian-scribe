@@ -115,6 +115,52 @@ export function SettingsInput(
   );
 }
 
+interface SettingsComboboxProps<K extends keyof ScribePluginSettings>
+  extends Omit<SettingsControlProps<K>, 'children'> {
+  onChange(value: ScribePluginSettings[K]): void;
+  value: ScribePluginSettings[K];
+  options: readonly string[];
+  placeholder?: string;
+}
+
+/**
+ * Text input with a searchable suggestion dropdown (native datalist).
+ * Typing filters the options; free-text values outside the list are allowed.
+ */
+export function SettingsCombobox(
+  props: SettingsComboboxProps<keyof ScribePluginSettings>,
+) {
+  const { id, onChange, value, options, placeholder } = props;
+  if (typeof value !== 'string') {
+    console.error(`Can't use combobox input for non-string value: ${id}`);
+    return null;
+  }
+
+  const datalistId = `scribe-${id}-datalist`;
+
+  return (
+    <SettingsControl {...props}>
+      <>
+        <input
+          type="text"
+          list={datalistId}
+          defaultValue={value}
+          placeholder={placeholder}
+          onChange={(e) => {
+            const value = e.currentTarget.value;
+            onChange(value);
+          }}
+        />
+        <datalist id={datalistId}>
+          {options.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+      </>
+    </SettingsControl>
+  );
+}
+
 interface SettingsControlProps<K extends keyof ScribePluginSettings> {
   id: K;
   name: string;

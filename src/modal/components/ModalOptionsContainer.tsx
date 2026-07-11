@@ -4,14 +4,7 @@ import { ModalAiModelOptions } from './options/ModalAiModelOptions';
 
 import type ScribePlugin from 'src';
 import type { ScribeOptions } from 'src';
-import type { LLM_MODELS } from 'src/util/openAiUtils';
-import type { TRANSCRIPT_PLATFORM } from 'src/settings/settings';
 import { ModalLanguageOptions } from './options/ModalLanguageOptions';
-
-export interface ScribeModelOptions {
-  llmModel: LLM_MODELS;
-  transcriptPlatform: TRANSCRIPT_PLATFORM;
-}
 
 export function ModalOptionsContainer({
   plugin,
@@ -61,7 +54,11 @@ export function ModalOptionsContainer({
       {isModelOptionsExpanded && (
         <>
           <h5>AI model options</h5>
-          <ModalAiModelOptions options={options} setOptions={setOptions} />
+          <ModalAiModelOptions
+            plugin={plugin}
+            options={options}
+            setOptions={setOptions}
+          />
         </>
       )}
     </div>

@@ -210,3 +210,30 @@ nav[role="tabpanel"] {
     opacity: 0.6;
   }
 }
+
+/* Provider privacy card */
+.scribe-provider-privacy-card {
+  margin: 8px 0 16px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  font-size: var(--font-ui-small);
+}
+
+.scribe-provider-privacy-title {
+  font-weight: var(--font-semibold);
+  margin-bottom: 4px;
+}
+
+.scribe-provider-privacy-facts {
+  margin: 0 0 4px 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+.scribe-provider-privacy-disclaimer {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  font-style: italic;
+}
