@@ -63,7 +63,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   transcriptDirectory: OBSIDIAN_PATHS.noteFolder,
   transcriptPlatform: TRANSCRIPT_PLATFORM.openAi,
   isMultiSpeakerEnabled: false,
-  llmModel: LLM_MODELS['gpt-4o'],
+  llmModel: LLM_MODELS['gpt-5.6-terra'],
   noteFilenamePrefix: 'scribe-{{date}}-',
   recordingFilenamePrefix: 'scribe-recording-{{date}}',
   dateFilenameFormat: 'YYYY-MM-DD',
