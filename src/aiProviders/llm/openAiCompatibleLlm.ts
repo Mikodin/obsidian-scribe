@@ -42,6 +42,29 @@ export const DEFAULT_GEMINI_MODEL = GEMINI_MODELS['gemini-3.5-flash'];
 
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
+// AssemblyAI's OpenAI-compatible LLM Gateway proxies ~25 models (Claude,
+// Gemini, GPT, Qwen, Kimi). Lets a user keep transcription + summarization
+// within AssemblyAI's data-handling envelope.
+export const ASSEMBLYAI_LLM_BASE_URL = 'https://llm-gateway.assemblyai.com/v1';
+export const DEFAULT_ASSEMBLYAI_LLM_MODEL = 'claude-sonnet-4-6';
+// The gateway defaults max_tokens to 1000 when omitted (unlike OpenAI/Gemini,
+// which use the model's own high default). A full structured note easily
+// exceeds that and gets truncated mid-JSON, so send an explicit generous cap.
+export const ASSEMBLYAI_LLM_MAX_TOKENS = 8192;
+// Seed list for the model combobox; free text is still allowed. The gateway
+// catalog drifts, so this is a convenience list, not an exhaustive one.
+export const ASSEMBLYAI_LLM_MODEL_IDS = [
+  'claude-sonnet-4-6',
+  'claude-opus-4-6',
+  'claude-haiku-4-5-20251001',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
+  'gpt-5.1',
+  'gpt-5-mini',
+  'gpt-4.1',
+] as const;
+
 // Gemini's OpenAI-compatible endpoint — keeps Google off LangChain's
 // @langchain/google-genai package, which bundles node:async_hooks and
 // crashes Obsidian mobile (the PR #101 revert).
@@ -58,15 +81,21 @@ function supportsCustomTemperature(model: string) {
 
 function createChatModel(config: LlmAdapterConfig, temperature: number) {
   // The model-name heuristic only holds for OpenAI's own catalog; OpenRouter
-  // routes to arbitrary providers, so let those models use their defaults.
+  // and the AssemblyAI gateway route to arbitrary providers, so let those
+  // models use their defaults.
+  const isMultiProviderGateway =
+    config.platform === PROCESS_PLATFORM.openRouter ||
+    config.platform === PROCESS_PLATFORM.assemblyAi;
   const useTemperature =
-    config.platform !== PROCESS_PLATFORM.openRouter &&
-    supportsCustomTemperature(config.model);
+    !isMultiProviderGateway && supportsCustomTemperature(config.model);
+
+  const isAssemblyAiGateway = config.platform === PROCESS_PLATFORM.assemblyAi;
 
   return new ChatOpenAI({
     model: config.model,
     apiKey: config.apiKey,
     ...(useTemperature && { temperature }),
+    ...(isAssemblyAiGateway && { maxTokens: ASSEMBLYAI_LLM_MAX_TOKENS }),
     configuration: {
       fetch: obsidianFetch,
       ...(config.baseUrl && { baseURL: config.baseUrl }),
@@ -84,11 +113,18 @@ export function createOpenAiCompatibleLlmAdapter(
     ): Promise<LlmSummary> {
       const model = createChatModel(config, 0.5);
 
+      // Combine the main prompt and the extra instructions into a SINGLE system
+      // message. Gateways that route to Anthropic models (the AssemblyAI LLM
+      // Gateway with a Claude model) collapse the OpenAI `system` messages into
+      // Anthropic's single `system` field; sending multiple risks the
+      // transcript-bearing first message being dropped.
+      const systemPrompt = [
+        buildSummarySystemPrompt(transcript),
+        ...buildSummaryExtraInstructions(options),
+      ].join('\n\n');
+
       const messages = [
-        new SystemMessage(buildSummarySystemPrompt(transcript)),
-        ...buildSummaryExtraInstructions(options).map(
-          (instruction) => new SystemMessage(instruction),
-        ),
+        new SystemMessage(systemPrompt),
         // Gemini's OpenAI-compat endpoint maps system messages to
         // system_instruction and 400s ("contents is not specified") if no
         // user message remains — same requirement as the Anthropic adapter.

@@ -1,6 +1,7 @@
 import type ScribePlugin from 'src';
 import type { ScribeOptions } from 'src';
 import { resolveLlmConfig } from 'src/aiProviders/llm/llmAdapter';
+import { ASSEMBLYAI_LLM_MODEL_IDS } from 'src/aiProviders/llm/openAiCompatibleLlm';
 import {
   LLM_PROVIDERS,
   TRANSCRIPT_PROVIDERS,
@@ -136,6 +137,26 @@ function ModalLlmModelPicker({
         />
         <datalist id="scribe-modal-openrouter-models">
           {openRouterModelIds.map((modelId) => (
+            <option key={modelId} value={modelId} />
+          ))}
+        </datalist>
+      </>
+    );
+  }
+
+  // AssemblyAI gateway: seeded combobox, any model id from the gateway allowed
+  if (processPlatform === PROCESS_PLATFORM.assemblyAi) {
+    return (
+      <>
+        <input
+          type="text"
+          list="scribe-modal-assemblyai-models"
+          value={llmModel}
+          placeholder="claude-sonnet-4-6"
+          onChange={(e) => onModelChange(e.target.value)}
+        />
+        <datalist id="scribe-modal-assemblyai-models">
+          {ASSEMBLYAI_LLM_MODEL_IDS.map((modelId) => (
             <option key={modelId} value={modelId} />
           ))}
         </datalist>

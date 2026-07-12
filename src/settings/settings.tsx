@@ -9,6 +9,7 @@ import {
   DEFAULT_ANTHROPIC_MODEL,
 } from 'src/aiProviders/llm/anthropicLlm';
 import {
+  DEFAULT_ASSEMBLYAI_LLM_MODEL,
   DEFAULT_GEMINI_MODEL,
   type GEMINI_MODELS,
   LLM_MODELS,
@@ -52,6 +53,7 @@ export interface ScribePluginSettings {
   anthropicModel: ANTHROPIC_MODELS;
   geminiModel: GEMINI_MODELS;
   openRouterModel: string;
+  assemblyAiLlmModel: string;
   recordingFilenamePrefix: string;
   noteFilenamePrefix: string;
   dateFilenameFormat: string;
@@ -90,6 +92,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   anthropicModel: DEFAULT_ANTHROPIC_MODEL,
   geminiModel: DEFAULT_GEMINI_MODEL,
   openRouterModel: 'anthropic/claude-sonnet-5',
+  assemblyAiLlmModel: DEFAULT_ASSEMBLYAI_LLM_MODEL,
   noteFilenamePrefix: 'scribe-{{date}}-',
   recordingFilenamePrefix: 'scribe-recording-{{date}}',
   dateFilenameFormat: 'YYYY-MM-DD',

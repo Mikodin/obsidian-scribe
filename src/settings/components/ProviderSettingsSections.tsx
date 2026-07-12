@@ -1,5 +1,6 @@
 import { ANTHROPIC_MODELS } from 'src/aiProviders/llm/anthropicLlm';
 import {
+  ASSEMBLYAI_LLM_MODEL_IDS,
   GEMINI_MODELS,
   LLM_MODELS,
 } from 'src/aiProviders/llm/openAiCompatibleLlm';
@@ -93,6 +94,13 @@ export function LlmProviderSection({
         <>
           <OpenRouterApiKeyInput />
           <OpenRouterModelInput />
+        </>
+      );
+    case PROCESS_PLATFORM.assemblyAi:
+      return (
+        <>
+          <AssemblyAiApiKeyInput />
+          <AssemblyAiLlmModelInput />
         </>
       );
     case PROCESS_PLATFORM.customOpenAi:
@@ -275,6 +283,19 @@ function OpenRouterModelInput() {
       description="Type to search the OpenRouter catalog, or enter any model id from https://openrouter.ai/models"
       placeholder="anthropic/claude-sonnet-5"
       options={modelIds}
+    />
+  );
+}
+
+function AssemblyAiLlmModelInput() {
+  const { register } = useSettingsForm();
+  return (
+    <SettingsCombobox
+      {...register('assemblyAiLlmModel')}
+      name="AssemblyAI model"
+      description="Type to search common gateway models, or enter any model id from https://www.assemblyai.com/docs/llm-gateway/available-models"
+      placeholder="claude-sonnet-4-6"
+      options={[...ASSEMBLYAI_LLM_MODEL_IDS]}
     />
   );
 }

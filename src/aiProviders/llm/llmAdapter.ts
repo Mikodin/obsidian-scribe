@@ -3,6 +3,7 @@ import { PROCESS_PLATFORM } from 'src/util/consts';
 import type { LlmSummary, SummaryOptions } from '../prompts';
 import { createAnthropicLlmAdapter } from './anthropicLlm';
 import {
+  ASSEMBLYAI_LLM_BASE_URL,
   createOpenAiCompatibleLlmAdapter,
   GEMINI_OPENAI_BASE_URL,
   OPENROUTER_BASE_URL,
@@ -55,6 +56,13 @@ export function resolveLlmConfig(
         apiKey: settings.openRouterApiKey,
         model: overrides?.model ?? settings.openRouterModel,
         baseUrl: OPENROUTER_BASE_URL,
+      };
+    case PROCESS_PLATFORM.assemblyAi:
+      return {
+        platform,
+        apiKey: settings.assemblyAiApiKey,
+        model: overrides?.model ?? settings.assemblyAiLlmModel,
+        baseUrl: ASSEMBLYAI_LLM_BASE_URL,
       };
     case PROCESS_PLATFORM.customOpenAi:
       return {
