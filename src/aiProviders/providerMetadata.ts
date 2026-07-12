@@ -157,6 +157,18 @@ export const LLM_PROVIDERS: Record<PROCESS_PLATFORM, ProviderMetadata> = {
       policyUrl: 'https://openrouter.ai/docs/features/privacy-and-logging',
     },
   },
+  [PROCESS_PLATFORM.assemblyAi]: {
+    displayName: 'AssemblyAI (LLM Gateway)',
+    apiKeySettingsField: 'assemblyAiApiKey',
+    keyConsoleUrl: 'https://www.assemblyai.com/app/account',
+    privacy: {
+      retentionSummary:
+        'Routed through AssemblyAI to the selected model provider; retention/training depend on that provider and your AssemblyAI settings',
+      trainsOnApiData: 'opt-out',
+      policyUrl:
+        'https://www.assemblyai.com/docs/faq/what-is-your-data-retention-policy',
+    },
+  },
   [PROCESS_PLATFORM.customOpenAi]: {
     displayName: 'Custom (OpenAI-compatible)',
     apiKeySettingsField: 'openAiApiKey',

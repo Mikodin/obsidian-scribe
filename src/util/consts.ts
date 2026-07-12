@@ -19,6 +19,7 @@ export enum PROCESS_PLATFORM {
   anthropic = 'anthropic',
   google = 'google',
   openRouter = 'openRouter',
+  assemblyAi = 'assemblyAi',
   customOpenAi = 'customOpenAi',
 }
 
