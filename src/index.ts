@@ -422,6 +422,11 @@ export default class ScribePlugin extends Plugin {
       return;
     }
 
+    if (!transcript.trim()) {
+      new Notice('Scribe: ⚠️ Skipping LLM processing — transcript is empty');
+      return;
+    }
+
     const llmSummary = await this.handleTranscriptSummary(
       transcript,
       scribeOptions,

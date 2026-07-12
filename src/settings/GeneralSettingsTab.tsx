@@ -20,6 +20,8 @@ const languagesMapping = Object.entries(LanguageDisplayNames)
 function GeneralSettingsTab() {
   const { register, settings } = useSettingsForm();
 
+  const isTranscriptionDisabled = settings.isDisableLlmTranscription;
+
   const isDateInPrefix =
     (settings.noteFilenamePrefix || '').includes('{{date}}') ||
     (settings.recordingFilenamePrefix || '').includes('{{date}}');
@@ -45,11 +47,13 @@ function GeneralSettingsTab() {
           // Inverted displayed value because initial semantics was misleading
           // Old: negative meaning (disable) => Truthy toggle state
           // New: positive meaning (enable) => Truthy toggle state
-          displayValue: (value) => !value,
+          // Forced off while transcription is disabled — there is nothing to process
+          displayValue: (value) => !value && !isTranscriptionDisabled,
           setValueAs: (value) => !value,
         })}
+        disabled={isTranscriptionDisabled}
         name="Process transcriptions with LLM"
-        description="If disabled, we will only transcribe recordings without summarization, insights etc."
+        description="If disabled, we will only transcribe recordings without summarization, insights etc. Requires transcription to be enabled."
       />
 
       <SettingsItemHeader name="Language" />
