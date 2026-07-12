@@ -5,6 +5,7 @@ interface SettingsToggleProps<K extends keyof ScribePluginSettings>
   extends Omit<SettingsControlProps<K>, 'children'> {
   onChange(value: ScribePluginSettings[K] & boolean): void;
   value: ScribePluginSettings[K] & boolean;
+  disabled?: boolean;
 }
 
 /**
@@ -13,11 +14,17 @@ interface SettingsToggleProps<K extends keyof ScribePluginSettings>
 export function SettingsToggle(
   props: SettingsToggleProps<keyof ScribePluginSettings>,
 ) {
-  const { id, onChange, value } = props;
+  const { id, onChange, value, disabled } = props;
   if (typeof value !== 'boolean') {
     console.error(`Can't use checkbox input for non-boolean value: ${id}`);
     return null;
   }
+
+  const handleToggle = () => {
+    if (!disabled) {
+      onChange(!value);
+    }
+  };
 
   return (
     <SettingsControl {...props}>
@@ -25,10 +32,11 @@ export function SettingsToggle(
         <input
           type="checkbox"
           checked={value}
-          onChange={() => onChange(!value)}
+          disabled={disabled}
+          onChange={handleToggle}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              onChange(!value);
+              handleToggle();
             }
           }}
         />
