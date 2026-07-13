@@ -40,13 +40,13 @@ export const DEFAULT_TEMPLATE: ScribeTemplate = {
     },
     {
       id: '1',
-      sectionHeader: 'Summary',
+      sectionHeader: '## Summary',
       sectionInstructions: `A summary of the transcript in Markdown.  It will be nested under a h2 # tag, so use a tag less than that for headers
 Concise bullet points containing the primary points of the speaker`,
     },
     {
       id: '2',
-      sectionHeader: 'Insights',
+      sectionHeader: '## Insights',
       sectionInstructions: `Insights that you gained from the transcript in Markdown.
 A brief section, a paragraph or two on what insights and enhancements you think of
 Several bullet points on things you think would be an improvement, feel free to use headers
@@ -55,7 +55,7 @@ It will be nested under an h2 tag, so use a tag less than that for headers
     },
     {
       id: '3',
-      sectionHeader: 'Mermaid Chart',
+      sectionHeader: '## Mermaid Chart',
       sectionOutputPrefix: '```mermaid',
       sectionOutputPostfix: '```',
       sectionInstructions: `A valid unicode mermaid chart that shows a concept map consisting of both what insights you had along with what the speaker said for the mermaid chart, 
@@ -64,7 +64,7 @@ Do not use any special characters that arent letters in the nodes text, particul
     },
     {
       id: '4',
-      sectionHeader: 'Answered Questions',
+      sectionHeader: '## Answered Questions',
       isSectionOptional: true,
       sectionInstructions: `If the user says "Hey Scribe" or alludes to you, asking you to do something, answer the question or do the ask and put the answers here
 Put the text in markdown, it will be nested under an h2 tag, so use a tag less than that for headers
@@ -161,7 +161,7 @@ const TemplateSection: React.FC<{
         description={
           isSystemSection
             ? 'Full markdown header line (e.g. "# Audio"). Leave blank for no header.'
-            : ''
+            : 'Full markdown header line (e.g. "## Summary"). Leave blank for no header.'
         }
         control={
           <input
@@ -456,7 +456,7 @@ const TemplateControls: React.FC<{
         onClick={() => {
           const newSection: TemplateSection = {
             id: Math.random().toString(36).substring(2, 9),
-            sectionHeader: 'New Section',
+            sectionHeader: '## New Section',
             sectionInstructions: 'New Section Instructions',
           };
 

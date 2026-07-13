@@ -77,7 +77,36 @@ export function ensureSystemSections(template: ScribeTemplate): {
 }
 
 /**
- * System-section headers are full raw markdown lines (e.g. `# Audio`).
+ * Migrates a persisted template to the current shape. Headers are verbatim
+ * markdown lines, so any non-blank header without a level gets `## ` prepended
+ * (pre-v3 templates rendered LLM headers as `## ${sectionHeader}`, so this
+ * also preserves their output byte-for-byte). Then system sections are
+ * injected. Idempotent: an already-migrated template passes through unchanged.
+ */
+export function migrateTemplate(template: ScribeTemplate): {
+  template: ScribeTemplate;
+  didChange: boolean;
+} {
+  let didPrependLevel = false;
+  const sections = template.sections.map((section) => {
+    const header = section.sectionHeader.trim();
+    if (!header || header.startsWith('#')) {
+      return section;
+    }
+    didPrependLevel = true;
+    return { ...section, sectionHeader: `## ${header}` };
+  });
+
+  const migrated = didPrependLevel ? { ...template, sections } : template;
+  const result = ensureSystemSections(migrated);
+  return {
+    template: result.template,
+    didChange: result.didChange || didPrependLevel,
+  };
+}
+
+/**
+ * Section headers are full raw markdown lines (e.g. `# Audio`).
  * Returns '' when the section renders nothing.
  */
 export function renderAudioSection(
@@ -118,12 +147,13 @@ export function renderLlmSection(
   value: string,
 ): string {
   const { sectionHeader, sectionOutputPrefix, sectionOutputPostfix } = section;
+  const headerLine = sectionHeader.trim() ? `${sectionHeader}\n` : '';
 
   if (sectionOutputPrefix || sectionOutputPostfix) {
-    return `## ${sectionHeader}\n${sectionOutputPrefix || ''}\n${value}\n${sectionOutputPostfix || ''}`;
+    return `${headerLine}${sectionOutputPrefix || ''}\n${value}\n${sectionOutputPostfix || ''}`;
   }
 
-  return `## ${sectionHeader}\n${value}`;
+  return `${headerLine}${value}`;
 }
 
 export interface SkeletonBlocks {

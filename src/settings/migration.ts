@@ -1,5 +1,5 @@
 import { PROCESS_PLATFORM, TRANSCRIPT_PLATFORM } from 'src/util/consts';
-import { ensureSystemSections } from 'src/util/templateSections';
+import { migrateTemplate } from 'src/util/templateSections';
 import type { ScribePluginSettings } from './settings';
 
 interface LegacySettings extends Partial<ScribePluginSettings> {
@@ -40,16 +40,17 @@ export function migrateSettings(saved: LegacySettings | null | undefined): {
     didMigrate = true;
   }
 
-  // v2 → v3: templates gain built-in Audio/Transcript system sections
+  // v2 → v3: templates gain built-in Audio/Transcript system sections and
+  // section headers become verbatim markdown lines (headerless ones become H2)
   if (migrated.noteTemplates) {
     migrated.noteTemplates = migrated.noteTemplates.map((template) => {
-      const { template: repaired, didChange } = ensureSystemSections(template);
+      const { template: repaired, didChange } = migrateTemplate(template);
       didMigrate = didMigrate || didChange;
       return repaired;
     });
   }
   if (migrated.activeNoteTemplate) {
-    const { template: repaired, didChange } = ensureSystemSections(
+    const { template: repaired, didChange } = migrateTemplate(
       migrated.activeNoteTemplate,
     );
     migrated.activeNoteTemplate = repaired;
