@@ -4,6 +4,7 @@ import {
   createLlmAdapter,
   resolveLlmConfig,
 } from './aiProviders/llm/llmAdapter';
+import type { LlmSummary } from './aiProviders/prompts';
 import {
   getMissingApiKeys,
   LLM_PROVIDERS,
@@ -28,9 +29,10 @@ import type {
 } from './util/consts';
 import { formatFilenamePrefix } from './util/filenameUtils';
 import {
-  appendTextToNote,
+  appendSkeletonToNote,
   createNewNote,
   renameFile,
+  replaceTextInNote,
   saveAudioRecording,
   updateFrontMatter,
 } from './util/fileUtils';
@@ -39,6 +41,13 @@ import {
   type SupportedMimeType,
 } from './util/mimeType';
 import { getDefaultPathSettings } from './util/pathUtils';
+import {
+  buildNoteSkeleton,
+  ensureSystemSections,
+  renderLlmSection,
+  renderTranscriptSection,
+  type SkeletonBlocks,
+} from './util/templateSections';
 import { convertToSafeJsonKey, extractMermaidChart } from './util/textUtil';
 
 export interface ScribeState {
@@ -392,31 +401,50 @@ export default class ScribePlugin extends Plugin {
       this.app.workspace.openLinkText(note?.path, currentPath, true);
     }
 
-    await appendTextToNote(this, note, '# Audio in progress');
+    const { template } = ensureSystemSections(activeNoteTemplate);
+
+    const { skeleton, transcriptSection, transcriptBlock, llmBlocks } =
+      buildNoteSkeleton(template, {
+        audioEmbedPath: isSaveAudioFileActive ? audioRecordingFile.path : null,
+        includeLlmSections: !isOnlyTranscribeActive,
+      });
+    await appendSkeletonToNote(this, note, skeleton);
 
     const audioExtension = audioRecordingFile.extension;
     const audioMimeType =
       audioExtension === 'mp3' ? 'audio/mpeg' : `audio/${audioExtension}`;
 
-    const transcript = await this.handleTranscription(
-      audioRecordingBuffer,
-      scribeOptions,
-      audioMimeType,
-    );
+    let transcript: string;
+    try {
+      transcript = await this.handleTranscription(
+        audioRecordingBuffer,
+        scribeOptions,
+        audioMimeType,
+      );
+    } catch (error) {
+      if (transcriptSection && transcriptBlock) {
+        await replaceTextInNote(
+          this,
+          note,
+          transcriptBlock,
+          renderTranscriptSection(
+            transcriptSection,
+            '⚠️ *Transcription failed*',
+          ),
+        );
+      }
+      await this.removeLlmSkeleton(note, llmBlocks);
+      throw error;
+    }
 
-    const inProgressHeaderToReplace = isAppendToActiveFile
-      ? '# Audio in progress'
-      : '\n# Audio in progress';
-
-    const transcriptTextToAppendToNote = isSaveAudioFileActive
-      ? `# Audio\n![[${audioRecordingFile.path}]]\n${transcript}`
-      : `# Audio\n${transcript}`;
-    await appendTextToNote(
-      this,
-      note,
-      transcriptTextToAppendToNote,
-      inProgressHeaderToReplace,
-    );
+    if (transcriptSection && transcriptBlock) {
+      await replaceTextInNote(
+        this,
+        note,
+        transcriptBlock,
+        renderTranscriptSection(transcriptSection, transcript),
+      );
+    }
 
     if (isOnlyTranscribeActive) {
       return;
@@ -424,41 +452,41 @@ export default class ScribePlugin extends Plugin {
 
     if (!transcript.trim()) {
       new Notice('Scribe: ⚠️ Skipping LLM processing — transcript is empty');
+      await this.removeLlmSkeleton(note, llmBlocks);
       return;
     }
 
-    const llmSummary = await this.handleTranscriptSummary(
-      transcript,
-      scribeOptions,
-    );
-
-    activeNoteTemplate.sections.forEach(async (section) => {
-      const {
-        sectionHeader,
-        sectionOutputPrefix,
-        sectionOutputPostfix,
-        isSectionOptional,
-      } = section;
-      const sectionKey = convertToSafeJsonKey(sectionHeader);
-      const sectionValue = llmSummary[sectionKey];
-
-      if (isSectionOptional && !sectionValue) {
-        return;
-      }
-
-      if (sectionOutputPrefix || sectionOutputPostfix) {
-        const textToAppend = `## ${sectionHeader}\n${sectionOutputPrefix || ''}\n${sectionValue}\n${sectionOutputPostfix || ''}`;
-
-        await appendTextToNote(this, note, textToAppend);
-
-        return;
-      }
-
-      await appendTextToNote(
-        this,
-        note,
-        `## ${sectionHeader}\n${sectionValue}`,
+    let llmSummary: LlmSummary;
+    try {
+      llmSummary = await this.handleTranscriptSummary(
+        transcript,
+        scribeOptions,
       );
+    } catch (error) {
+      await this.removeLlmSkeleton(note, llmBlocks);
+      throw error;
+    }
+
+    await this.app.vault.process(note, (data) => {
+      let updated = data;
+      for (const { section, block } of llmBlocks) {
+        const sectionValue =
+          llmSummary[convertToSafeJsonKey(section.sectionHeader)];
+
+        if (section.isSectionOptional && !sectionValue) {
+          const withoutBlock = updated.replace(`\n${block}`, () => '');
+          updated =
+            withoutBlock === updated
+              ? updated.replace(block, () => '')
+              : withoutBlock;
+          continue;
+        }
+
+        updated = updated.replace(block, () =>
+          renderLlmSection(section, sectionValue ?? ''),
+        );
+      }
+      return updated;
     });
 
     const shouldRenameNote = !isAppendToActiveFile;
@@ -470,6 +498,27 @@ export default class ScribePlugin extends Plugin {
 
       await renameFile(this, note, llmFileName);
     }
+  }
+
+  private async removeLlmSkeleton(
+    note: TFile,
+    llmBlocks: SkeletonBlocks['llmBlocks'],
+  ) {
+    if (!llmBlocks.length) {
+      return;
+    }
+
+    await this.app.vault.process(note, (data) => {
+      let updated = data;
+      for (const { block } of llmBlocks) {
+        const withoutBlock = updated.replace(`\n${block}`, () => '');
+        updated =
+          withoutBlock === updated
+            ? updated.replace(block, () => '')
+            : withoutBlock;
+      }
+      return updated;
+    });
   }
 
   async handleTranscription(

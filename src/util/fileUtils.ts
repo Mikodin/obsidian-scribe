@@ -168,3 +168,46 @@ export async function appendTextToNote(
     throw error;
   }
 }
+
+export async function appendSkeletonToNote(
+  plugin: ScribePlugin,
+  noteFile: TFile,
+  skeleton: string,
+) {
+  try {
+    await plugin.app.vault.process(noteFile, (data) => {
+      if (data.length === 0) {
+        return skeleton;
+      }
+      return data.endsWith('\n')
+        ? `${data}${skeleton}`
+        : `${data}\n${skeleton}`;
+    });
+
+    return noteFile;
+  } catch (error) {
+    console.error('Failed to append skeleton to note', error);
+    throw error;
+  }
+}
+
+export async function replaceTextInNote(
+  plugin: ScribePlugin,
+  noteFile: TFile,
+  textToReplace: string,
+  newText: string,
+) {
+  try {
+    await plugin.app.vault.process(noteFile, (data) =>
+      // Replacer fn so $-patterns in transcripts/LLM output aren't interpreted
+      data.includes(textToReplace)
+        ? data.replace(textToReplace, () => newText)
+        : data,
+    );
+
+    return noteFile;
+  } catch (error) {
+    console.error('Failed to replace text in note', error);
+    throw error;
+  }
+}

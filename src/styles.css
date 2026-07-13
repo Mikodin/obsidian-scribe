@@ -237,3 +237,8 @@ nav[role="tabpanel"] {
   font-size: var(--font-ui-smaller);
   font-style: italic;
 }
+
+/* Template section reorder buttons */
+.scribe-section-move-btn {
+  margin-right: 4px;
+}

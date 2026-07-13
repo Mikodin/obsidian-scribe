@@ -2,25 +2,42 @@ import { useEffect, useState } from 'react';
 
 import { SettingsItem } from './SettingsItem';
 import type ScribePlugin from 'src';
+import { getSectionType } from 'src/util/templateSections';
 
 export interface ScribeTemplate {
   id: string;
   name: string;
   sections: TemplateSection[];
 }
+export type SectionType = 'audio' | 'transcript' | 'llm';
 export interface TemplateSection {
   id: string;
+  sectionType?: SectionType; // absent === 'llm' (backward compat with persisted templates)
   sectionHeader: string;
   sectionInstructions: string;
   isSectionOptional?: boolean;
   sectionOutputPrefix?: string;
   sectionOutputPostfix?: string; // Added property
+  isCollapsedByDefault?: boolean; // transcript sections only
 }
 
 export const DEFAULT_TEMPLATE: ScribeTemplate = {
   id: 'default',
   name: 'Scribe',
   sections: [
+    {
+      id: 'system-audio',
+      sectionType: 'audio',
+      sectionHeader: '# Audio',
+      sectionInstructions: '',
+    },
+    {
+      id: 'system-transcript',
+      sectionType: 'transcript',
+      sectionHeader: '',
+      sectionInstructions: '',
+      isCollapsedByDefault: false,
+    },
     {
       id: '1',
       sectionHeader: 'Summary',
@@ -72,11 +89,7 @@ const TemplateSection: React.FC<{
   setNoteTemplates,
   noteTemplates,
 }) => {
-  const updateSection = (updatedSection: TemplateSection) => {
-    const updatedSections = activeTemplate.sections.map((sec) =>
-      sec.sectionHeader === section.sectionHeader ? updatedSection : sec,
-    );
-
+  const applySections = (updatedSections: TemplateSection[]) => {
     const updatedNoteTemplates = noteTemplates.map((template) => {
       // Fill the id if it is not set
       if (!template.id) {
@@ -98,18 +111,58 @@ const TemplateSection: React.FC<{
     setActiveTemplate({ ...activeTemplate, sections: updatedSections });
   };
 
-  const removeSection = () => {
-    const updatedSections = activeTemplate.sections.filter(
-      (sec) => sec.id !== section.id,
+  const updateSection = (updatedSection: TemplateSection) => {
+    applySections(
+      activeTemplate.sections.map((sec) =>
+        sec.id === section.id ? updatedSection : sec,
+      ),
     );
-    setActiveTemplate({ ...activeTemplate, sections: updatedSections });
   };
+
+  const removeSection = () => {
+    applySections(
+      activeTemplate.sections.filter((sec) => sec.id !== section.id),
+    );
+  };
+
+  const sectionIdx = activeTemplate.sections.findIndex(
+    (sec) => sec.id === section.id,
+  );
+
+  const moveSection = (direction: 'up' | 'down') => {
+    const swapIdx = direction === 'up' ? sectionIdx - 1 : sectionIdx + 1;
+    if (
+      sectionIdx === -1 ||
+      swapIdx < 0 ||
+      swapIdx >= activeTemplate.sections.length
+    ) {
+      return;
+    }
+
+    const updatedSections = [...activeTemplate.sections];
+    [updatedSections[sectionIdx], updatedSections[swapIdx]] = [
+      updatedSections[swapIdx],
+      updatedSections[sectionIdx],
+    ];
+    applySections(updatedSections);
+  };
+
+  const sectionType = getSectionType(section);
+  const isSystemSection = sectionType !== 'llm';
 
   return (
     <div style={{ width: '100%' }}>
+      {isSystemSection && (
+        <p>📌 {sectionType === 'audio' ? 'Audio' : 'Transcript'} (built-in)</p>
+      )}
+
       <SettingsItem
         name="Section Header"
-        description=""
+        description={
+          isSystemSection
+            ? 'Full markdown header line (e.g. "# Audio"). Leave blank for no header.'
+            : ''
+        }
         control={
           <input
             disabled={isTemplateLocked}
@@ -122,86 +175,142 @@ const TemplateSection: React.FC<{
         }
       />
 
-      <p>Section Instructions</p>
-      <textarea
-        disabled={isTemplateLocked}
-        value={section.sectionInstructions}
-        onChange={(e) => {
-          updateSection({ ...section, sectionInstructions: e.target.value });
-        }}
-        rows={3}
-        style={{
-          width: '100%',
-          overflow: 'visible',
-          height: 'auto',
-        }}
-        onFocus={(e) => {
-          const target = e.target as HTMLTextAreaElement;
-          target.style.height = `${target.scrollHeight}px`;
-        }}
-        onInput={(e) => {
-          const target = e.target as HTMLTextAreaElement;
-          target.style.height = `${target.scrollHeight}px`;
-        }}
-      />
-
-      <SettingsItem
-        name="Section Optional"
-        description='Marks the section as optional - for example "Ask Scribe"'
-        control={
-          <input
+      {!isSystemSection && (
+        <>
+          <p>Section Instructions</p>
+          <textarea
             disabled={isTemplateLocked}
-            type="checkbox"
-            checked={Boolean(section.isSectionOptional)}
+            value={section.sectionInstructions}
             onChange={(e) => {
               updateSection({
                 ...section,
-                isSectionOptional: e.target.checked,
+                sectionInstructions: e.target.value,
               });
             }}
-          />
-        }
-      />
-
-      <SettingsItem
-        name="Section Output Prefix"
-        description="Prefix for the section output - this is useful for code blocks"
-        control={
-          <input
-            disabled={isTemplateLocked}
-            type="text"
-            value={section.sectionOutputPrefix || ''}
-            onChange={(e) => {
-              updateSection({
-                ...section,
-                sectionOutputPrefix: e.target.value,
-              });
+            rows={3}
+            style={{
+              width: '100%',
+              overflow: 'visible',
+              height: 'auto',
+            }}
+            onFocus={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = `${target.scrollHeight}px`;
+            }}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = `${target.scrollHeight}px`;
             }}
           />
-        }
-      />
 
-      <SettingsItem
-        name="Section Output Postfix"
-        description="Postfix for the section output - this is useful for codeblocks"
-        control={
-          <input
-            disabled={isTemplateLocked}
-            type="text"
-            value={section.sectionOutputPostfix || ''}
-            onChange={(e) => {
-              updateSection({
-                ...section,
-                sectionOutputPostfix: e.target.value,
-              });
-            }}
+          <SettingsItem
+            name="Section Optional"
+            description='Marks the section as optional - for example "Ask Scribe"'
+            control={
+              <input
+                disabled={isTemplateLocked}
+                type="checkbox"
+                checked={Boolean(section.isSectionOptional)}
+                onChange={(e) => {
+                  updateSection({
+                    ...section,
+                    isSectionOptional: e.target.checked,
+                  });
+                }}
+              />
+            }
           />
-        }
-      />
 
-      <button type="button" onClick={removeSection} disabled={isTemplateLocked}>
-        Remove Section
+          <SettingsItem
+            name="Section Output Prefix"
+            description="Prefix for the section output - this is useful for code blocks"
+            control={
+              <input
+                disabled={isTemplateLocked}
+                type="text"
+                value={section.sectionOutputPrefix || ''}
+                onChange={(e) => {
+                  updateSection({
+                    ...section,
+                    sectionOutputPrefix: e.target.value,
+                  });
+                }}
+              />
+            }
+          />
+
+          <SettingsItem
+            name="Section Output Postfix"
+            description="Postfix for the section output - this is useful for codeblocks"
+            control={
+              <input
+                disabled={isTemplateLocked}
+                type="text"
+                value={section.sectionOutputPostfix || ''}
+                onChange={(e) => {
+                  updateSection({
+                    ...section,
+                    sectionOutputPostfix: e.target.value,
+                  });
+                }}
+              />
+            }
+          />
+        </>
+      )}
+
+      {sectionType === 'transcript' && (
+        <SettingsItem
+          name="Collapse transcript by default"
+          description="Renders the transcript inside a foldable callout"
+          control={
+            <input
+              disabled={isTemplateLocked}
+              type="checkbox"
+              checked={Boolean(section.isCollapsedByDefault)}
+              onChange={(e) => {
+                updateSection({
+                  ...section,
+                  isCollapsedByDefault: e.target.checked,
+                });
+              }}
+            />
+          }
+        />
+      )}
+
+      <button
+        type="button"
+        className="scribe-section-move-btn"
+        onClick={() => moveSection('up')}
+        disabled={isTemplateLocked || sectionIdx <= 0}
+        aria-label="Move section up"
+      >
+        ▲
       </button>
+      <button
+        type="button"
+        className="scribe-section-move-btn"
+        onClick={() => moveSection('down')}
+        disabled={
+          isTemplateLocked ||
+          sectionIdx === -1 ||
+          sectionIdx >= activeTemplate.sections.length - 1
+        }
+        aria-label="Move section down"
+      >
+        ▼
+      </button>
+
+      {!isSystemSection && (
+        <button
+          type="button"
+          onClick={removeSection}
+          disabled={isTemplateLocked}
+        >
+          Remove Section
+        </button>
+      )}
 
       <hr />
     </div>
@@ -255,7 +364,21 @@ const TemplateControls: React.FC<{
           const newTemplate: ScribeTemplate = {
             id: Math.random().toString(36).substring(2, 9),
             name: Date.now().toString(),
-            sections: [],
+            sections: [
+              {
+                id: 'system-audio',
+                sectionType: 'audio',
+                sectionHeader: '# Audio',
+                sectionInstructions: '',
+              },
+              {
+                id: 'system-transcript',
+                sectionType: 'transcript',
+                sectionHeader: '',
+                sectionInstructions: '',
+                isCollapsedByDefault: false,
+              },
+            ],
           };
           const updatedTemplates = [...noteTemplates, newTemplate];
           setNoteTemplates(updatedTemplates);
@@ -270,7 +393,11 @@ const TemplateControls: React.FC<{
         onClick={() => {
           const clonedTemplate: ScribeTemplate = {
             ...activeTemplate,
+            id: Math.random().toString(36).substring(2, 9),
             name: `${activeTemplate.name} (Copy)`,
+            sections: activeTemplate.sections.map((section) => ({
+              ...section,
+            })),
           };
           const updatedTemplates = [...noteTemplates, clonedTemplate];
           setNoteTemplates(updatedTemplates);

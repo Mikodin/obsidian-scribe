@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ScribeTemplate } from 'src/settings/components/NoteTemplateSettings';
+import { getLlmSections } from 'src/util/templateSections';
 import { convertToSafeJsonKey } from 'src/util/textUtil';
 
 /**
@@ -74,7 +75,7 @@ export function buildSummaryZodSchema(activeNoteTemplate: ScribeTemplate) {
       ),
   };
 
-  activeNoteTemplate.sections.forEach((section) => {
+  getLlmSections(activeNoteTemplate).forEach((section) => {
     const { sectionHeader, sectionInstructions, isSectionOptional } = section;
     schema[convertToSafeJsonKey(sectionHeader)] = isSectionOptional
       ? z.string().nullable().describe(sectionInstructions)
