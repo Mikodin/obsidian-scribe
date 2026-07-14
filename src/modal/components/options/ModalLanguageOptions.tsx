@@ -4,6 +4,7 @@ import {
   LanguageDisplayNames,
   LanguageOptions,
   type OutputLanguageOptions,
+  languageOptionValues,
 } from 'src/util/consts';
 
 export function ModalLanguageOptions({
@@ -37,9 +38,9 @@ export function ModalLanguageOptions({
               });
             }}
           >
-            {Object.keys(LanguageOptions).map((lang) => (
+            {languageOptionValues.map((lang) => (
               <option key={lang} value={lang}>
-                {LanguageDisplayNames[lang as LanguageOptions]}
+                {LanguageDisplayNames[lang]}
               </option>
             ))}
           </select>
@@ -59,11 +60,11 @@ export function ModalLanguageOptions({
               });
             }}
           >
-            {Object.keys(LanguageOptions)
+            {languageOptionValues
               .filter((lang) => lang !== LanguageOptions.auto) // Remove auto
               .map((lang) => (
                 <option key={lang} value={lang}>
-                  {LanguageDisplayNames[lang as LanguageOptions]}
+                  {LanguageDisplayNames[lang]}
                 </option>
               ))}
           </select>

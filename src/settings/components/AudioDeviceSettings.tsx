@@ -49,7 +49,7 @@ function AudioDeviceSettings() {
       }
     };
 
-    getAudioDevices();
+    void getAudioDevices();
   }, []);
 
   return isLoading ? (

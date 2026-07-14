@@ -133,7 +133,7 @@ export class AudioRecord {
 
       const recorder = this.mediaRecorder;
 
-      const handleStop = async () => {
+      const handleStop = () => {
         try {
           recorder.stream.getTracks().forEach((track) => {
             track.stop();
@@ -155,7 +155,7 @@ export class AudioRecord {
           resolve(blob);
         } catch (err) {
           console.error('Error during recording stop:', err);
-          reject(err);
+          reject(err instanceof Error ? err : new Error(String(err)));
         }
       };
 

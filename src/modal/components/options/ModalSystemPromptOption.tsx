@@ -43,11 +43,11 @@ export function ModalSystemPromptOption({
               height: 'auto',
             }}
             onFocus={(e) => {
-              const target = e.target as HTMLTextAreaElement;
+              const target = e.currentTarget;
               target.style.height = `${target.scrollHeight}px`;
             }}
             onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
+              const target = e.currentTarget;
               target.style.height = `${target.scrollHeight}px`;
             }}
           />

@@ -19,16 +19,16 @@ export class ScribeControlsModal extends Modal {
     this.plugin = plugin;
   }
 
-  async onOpen() {
+  onOpen() {
     this.plugin.state.isOpen = true;
     this.initModal();
   }
 
-  async onClose() {
+  onClose() {
     const { contentEl } = this;
     contentEl.empty();
     this.plugin.state.isOpen = false;
-    this.plugin.cancelRecording();
+    void this.plugin.cancelRecording();
     this.root?.unmount();
   }
 
@@ -170,10 +170,10 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
             active={isActive}
             isScribing={isScribing}
             isProcessing={plugin.state.isProcessing}
-            handleStart={handleStart}
-            handlePauseResume={handlePauseResume}
-            handleComplete={handleComplete}
-            handleReset={handleReset}
+            handleStart={() => void handleStart()}
+            handlePauseResume={() => void handlePauseResume()}
+            handleComplete={() => void handleComplete()}
+            handleReset={() => void handleReset()}
           />
         </>
       )}

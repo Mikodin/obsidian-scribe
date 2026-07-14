@@ -194,11 +194,11 @@ const TemplateSection: React.FC<{
               height: 'auto',
             }}
             onFocus={(e) => {
-              const target = e.target as HTMLTextAreaElement;
+              const target = e.currentTarget;
               target.style.height = `${target.scrollHeight}px`;
             }}
             onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
+              const target = e.currentTarget;
               target.style.height = `${target.scrollHeight}px`;
             }}
           />

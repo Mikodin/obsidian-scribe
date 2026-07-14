@@ -35,7 +35,7 @@ export function SettingsFormProvider({
   const [settings, setSettings] = useState(plugin.settings);
 
   const debouncedSaveSettings = useDebounce(() => {
-    plugin.saveSettings();
+    void plugin.saveSettings();
   }, 500);
 
   function handleSettingChange<K extends keyof ScribePluginSettings>(

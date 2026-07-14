@@ -27,21 +27,21 @@ function scribeDropDownMenu(plugin: ScribePlugin): Menu {
         recordingState === 'paused' ? 'Resume Recording' : 'Pause Recording',
       );
       item.onClick(() => {
-        plugin.handlePauseResumeRecording();
+        void plugin.handlePauseResumeRecording();
       });
     });
     menu.addItem((item) => {
       item.setIcon('trash-2');
       item.setTitle('Cancel Recording');
       item.onClick(() => {
-        plugin.cancelRecording();
+        void plugin.cancelRecording();
       });
     });
     menu.addItem((item) => {
       item.setIcon('save');
       item.setTitle('Stop Recording');
       item.onClick(() => {
-        plugin.scribe();
+        void plugin.scribe();
       });
     });
   } else {
@@ -57,7 +57,7 @@ function scribeDropDownMenu(plugin: ScribePlugin): Menu {
       item.setIcon('mic-vocal');
       item.setTitle('Start Recording');
       item.onClick(() => {
-        plugin.startRecording();
+        void plugin.startRecording();
       });
     });
   }

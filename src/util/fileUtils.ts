@@ -70,9 +70,6 @@ export async function createNewNote(
     return savedFile;
   } catch (error) {
     console.error('Failed to save file', error);
-    if (error === 'Error: File already exists') {
-      createNewNote(plugin, `${fileName}.${Math.random() * 100}`);
-    }
     throw error;
   }
 }
