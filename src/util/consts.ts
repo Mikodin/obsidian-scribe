@@ -46,6 +46,8 @@ export enum LanguageOptions {
 
 export type OutputLanguageOptions = Exclude<LanguageOptions, 'auto'>;
 
+export const languageOptionValues = Object.values(LanguageOptions);
+
 export const LanguageDisplayNames: { [key in LanguageOptions]: string } = {
   [LanguageOptions.auto]: 'Auto Detect',
   [LanguageOptions.en]: 'English',

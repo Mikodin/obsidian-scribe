@@ -5,8 +5,14 @@ import {
 import type { ScribePluginSettings } from '../settings';
 
 interface RegisterOptions<K extends keyof ScribePluginSettings> {
-  displayValue?(value: ScribePluginSettings[K]): ScribePluginSettings[K];
-  setValueAs?(value: ScribePluginSettings[K]): ScribePluginSettings[K];
+  displayValue?(
+    this: void,
+    value: ScribePluginSettings[K],
+  ): ScribePluginSettings[K];
+  setValueAs?(
+    this: void,
+    value: ScribePluginSettings[K],
+  ): ScribePluginSettings[K];
 }
 
 /**

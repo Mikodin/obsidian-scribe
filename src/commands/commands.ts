@@ -40,17 +40,17 @@ export function handleCommands(plugin: ScribePlugin) {
     callback: async () => {
       const activeFile = plugin.app.workspace.getActiveFile();
       if (activeFile) {
-        plugin.scribeExistingFile(activeFile);
+        await plugin.scribeExistingFile(activeFile);
       }
     },
   });
   plugin.addCommand({
     id: 'scribe-fix-mermaid-chart',
     name: 'Fix mermaid chart',
-    callback: () => {
+    callback: async () => {
       const activeFile = plugin.app.workspace.getActiveFile();
       if (activeFile) {
-        plugin.fixMermaidChart(activeFile);
+        await plugin.fixMermaidChart(activeFile);
       }
     },
   });

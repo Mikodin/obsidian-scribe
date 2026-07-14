@@ -237,14 +237,14 @@ export default class ScribePlugin extends Plugin {
 
       if (!scribeOptions.isSaveAudioFileActive) {
         const fileName = recordingFile.name;
-        await this.app.vault.delete(recordingFile);
+        await this.app.fileManager.trashFile(recordingFile);
         new Notice(`Scribe: ✅🗑️ Audio file deleted ${fileName}`);
       }
     } catch (error) {
       new Notice(`Scribe: Something went wrong ${String(error)}`);
       console.error('Scribe: Something went wrong', error);
     } finally {
-      await this.cleanup();
+      this.cleanup();
     }
   }
 
@@ -302,7 +302,7 @@ export default class ScribePlugin extends Plugin {
       new Notice(`Scribe: Something went wrong ${String(error)}`);
       console.error('Scribe: Something went wrong', error);
     } finally {
-      await this.cleanup();
+      this.cleanup();
     }
   }
 
@@ -339,7 +339,7 @@ export default class ScribePlugin extends Plugin {
     } catch (error) {
       new Notice(`Scribe: Something went wrong ${String(error)}`);
     } finally {
-      await this.cleanup();
+      this.cleanup();
     }
   }
 
@@ -363,19 +363,19 @@ export default class ScribePlugin extends Plugin {
     baseFileName: string,
     isAppendToActiveFile: boolean,
   ): Promise<TFile> {
-    let note = isAppendToActiveFile
-      ? (this.app.workspace.getActiveFile() as TFile)
-      : await createNewNote(this, baseFileName);
+    if (isAppendToActiveFile) {
+      const activeFile = this.app.workspace.getActiveFile();
+      if (activeFile) {
+        return activeFile;
+      }
 
-    if (!note) {
       new Notice('Scribe: ⚠️ No active file to append to, creating new one!');
-      note = (await createNewNote(this, baseFileName)) as TFile;
-
-      const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
-      this.app.workspace.openLinkText(note.path, currentPath, true);
+      const note = await createNewNote(this, baseFileName);
+      await this.app.workspace.openLinkText(note.path, '', true);
+      return note;
     }
 
-    return note;
+    return createNewNote(this, baseFileName);
   }
 
   async handleScribeFile({
@@ -398,7 +398,7 @@ export default class ScribePlugin extends Plugin {
 
     if (!isAppendToActiveFile) {
       const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
-      this.app.workspace.openLinkText(note?.path, currentPath, true);
+      await this.app.workspace.openLinkText(note.path, currentPath, true);
     }
 
     const { template } = ensureSystemSections(activeNoteTemplate);
@@ -612,7 +612,7 @@ export default class ScribePlugin extends Plugin {
     const notice = new Notice(this.formatRecordingNoticeMessage(), 0);
     notice.containerEl.addClass('scribe-recording-notice');
     notice.containerEl.addEventListener('click', () => {
-      this.scribe();
+      void this.scribe();
     });
     this.recordingNotice = notice;
 

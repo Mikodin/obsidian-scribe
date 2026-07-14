@@ -1,4 +1,8 @@
-import { LanguageDisplayNames, LanguageOptions } from 'src/util/consts';
+import {
+  LanguageDisplayNames,
+  LanguageOptions,
+  languageOptionValues,
+} from 'src/util/consts';
 import { formatFilenamePrefix } from 'src/util/filenameUtils';
 import AudioDeviceSettings from './components/AudioDeviceSettings';
 import DirectorySelect from './components/DirectorySelect';
@@ -10,9 +14,9 @@ import {
 import { SettingsItemHeader } from './components/SettingsItem';
 import useSettingsForm from './hooks/useSettingsForm';
 
-const languagesMapping = Object.entries(LanguageDisplayNames)
-  .filter(([value]) => value !== LanguageOptions.auto)
-  .map(([value, displayName]) => ({ displayName, value }));
+const languagesMapping = languageOptionValues
+  .filter((value) => value !== LanguageOptions.auto)
+  .map((value) => ({ displayName: LanguageDisplayNames[value], value }));
 
 /**
  * Tab, containing general settings

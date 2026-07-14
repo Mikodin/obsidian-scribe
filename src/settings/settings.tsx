@@ -31,10 +31,10 @@ import {
 } from './components/NoteTemplateSettings';
 import { SettingsFormProvider } from './provider/SettingsFormProvider';
 
-export enum OBSIDIAN_PATHS {
-  noteFolder = 'matchObsidianNoteFolder',
-  resourceFolder = 'matchObsidianResourceFolder',
-}
+export const OBSIDIAN_PATHS = {
+  noteFolder: 'matchObsidianNoteFolder',
+  resourceFolder: 'matchObsidianResourceFolder',
+} as const;
 export interface ScribePluginSettings {
   assemblyAiApiKey: string;
   openAiApiKey: string;
@@ -113,7 +113,7 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   customChatModel: 'gpt-4o',
 };
 
-export async function handleSettingsTab(plugin: ScribePlugin) {
+export function handleSettingsTab(plugin: ScribePlugin) {
   plugin.addSettingTab(new ScribeSettingsTab(plugin.app, plugin));
 }
 
@@ -130,7 +130,7 @@ export class ScribeSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
-    this.plugin.loadSettings();
+    void this.plugin.loadSettings();
 
     const reactWrapper = containerEl.createDiv({
       cls: 'scribe-settings-react',
@@ -161,7 +161,7 @@ export class ScribeSettingsTab extends PluginSettingTab {
   }
 
   saveSettings() {
-    this.plugin.saveSettings();
+    void this.plugin.saveSettings();
   }
 }
 
@@ -170,7 +170,7 @@ const ScribeSettings: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
     SettingsTabsId.GENERAL,
   );
   const debouncedSaveSettings = useDebounce(() => {
-    plugin.saveSettings();
+    void plugin.saveSettings();
   }, 500);
 
   const handleTabSelect = (tabId: SettingsTabsId) => {

@@ -3,7 +3,7 @@ import type { ScribePluginSettings } from '../settings';
 
 interface SettingsToggleProps<K extends keyof ScribePluginSettings>
   extends Omit<SettingsControlProps<K>, 'children'> {
-  onChange(value: ScribePluginSettings[K] & boolean): void;
+  onChange(this: void, value: ScribePluginSettings[K] & boolean): void;
   value: ScribePluginSettings[K] & boolean;
   disabled?: boolean;
 }
@@ -49,7 +49,7 @@ interface SettingsSelectProps<K extends keyof ScribePluginSettings>
   extends Omit<SettingsControlProps<K>, 'children'> {
   // Method syntax keeps the param bivariant so register()'s narrowly-typed
   // onChange remains assignable under strictFunctionTypes
-  onChange(value: ScribePluginSettings[K]): void;
+  onChange(this: void, value: ScribePluginSettings[K]): void;
   value: ScribePluginSettings[K];
   valuesMapping: {
     displayName: string;
@@ -87,7 +87,7 @@ export function SettingsSelect(
 }
 interface SettingsInputProps<K extends keyof ScribePluginSettings>
   extends Omit<SettingsControlProps<K>, 'children'> {
-  onChange(value: ScribePluginSettings[K]): void;
+  onChange(this: void, value: ScribePluginSettings[K]): void;
   value: ScribePluginSettings[K];
   disabled?: boolean;
   placeholder?: string;
@@ -120,7 +120,7 @@ export function SettingsInput(
 
 interface SettingsComboboxProps<K extends keyof ScribePluginSettings>
   extends Omit<SettingsControlProps<K>, 'children'> {
-  onChange(value: ScribePluginSettings[K]): void;
+  onChange(this: void, value: ScribePluginSettings[K]): void;
   value: ScribePluginSettings[K];
   options: readonly string[];
   placeholder?: string;

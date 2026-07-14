@@ -33,14 +33,14 @@ export const obsidianFetch = async (
   const { url } = req;
 
   // The OpenAI SDK occasionally calls fetch('data:,...') internally to read
-  // file content. Delegate to native fetch — Obsidian's requestUrl only
-  // handles http/https.
+  // file content. Decode locally — Obsidian's requestUrl only handles
+  // http/https, and data: URLs never touch the network anyway.
   if (url.startsWith('data:')) {
     console.debug(
-      '[obsidianFetch] data: URL — delegating to native fetch',
+      '[obsidianFetch] data: URL — decoding locally',
       url.slice(0, 40),
     );
-    return fetch(requestInfo, init);
+    return dataUrlToResponse(url);
   }
 
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -71,8 +71,7 @@ export const obsidianFetch = async (
       if (schema && typeof schema === 'object') {
         delete schema.$schema;
         delete schema.title;
-        bodyBuffer = new TextEncoder().encode(JSON.stringify(bodyJson))
-          .buffer as ArrayBuffer;
+        bodyBuffer = new TextEncoder().encode(JSON.stringify(bodyJson)).buffer;
       }
     } catch {
       // Not valid JSON or no schema to strip — leave body unchanged
@@ -109,6 +108,24 @@ export const obsidianFetch = async (
   }
   return obsidianResponseToResponse(obsidianResponse);
 };
+
+function dataUrlToResponse(url: string): Response {
+  const match = url.match(/^data:([^,]*),([\s\S]*)$/);
+  if (!match) {
+    throw new Error(`Malformed data: URL: "${url.slice(0, 40)}..."`);
+  }
+  const [, meta, data] = match;
+  const isBase64 = /;base64$/i.test(meta);
+  const mimeType =
+    meta.replace(/;base64$/i, '') || 'text/plain;charset=US-ASCII';
+  const bytes = isBase64
+    ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
+    : new TextEncoder().encode(decodeURIComponent(data));
+  return new Response(bytes, {
+    status: 200,
+    headers: { 'content-type': mimeType },
+  });
+}
 
 function obsidianResponseToResponse(
   obsidianResponse: RequestUrlResponse,
