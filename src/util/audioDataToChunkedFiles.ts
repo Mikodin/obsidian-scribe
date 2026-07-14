@@ -6,7 +6,15 @@
 
 import { toFile } from 'openai';
 import type { Uploadable } from 'openai/uploads';
-import { AudioContext, type IAudioBuffer } from 'standardized-audio-context';
+
+// Older iOS WebViews only expose the prefixed constructor
+function getAudioContextConstructor(): typeof AudioContext {
+  return (
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext })
+      .webkitAudioContext
+  );
+}
 
 /**
  * Given an input file, converts it to mono, splits that mono audio into chunks
@@ -17,7 +25,8 @@ export default async function audioDataToChunkedFiles(
   maxSize: number,
 ): Promise<Uploadable[]> {
   try {
-    const audioContext = new AudioContext();
+    const AudioContextConstructor = getAudioContextConstructor();
+    const audioContext = new AudioContextConstructor();
 
     // fallback for iOS / WebKit decodeAudioData limits (> ~30s)
     let sourceBuffer: AudioBuffer | undefined;
@@ -98,7 +107,7 @@ function audioBufferToMono(
 }
 
 // Look, I'm not gonna pretend ChatGPT didn't write this
-export function audioBufferToWav(buffer: IAudioBuffer) {
+export function audioBufferToWav(buffer: AudioBuffer) {
   const numOfChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const length = buffer.length * numOfChannels * 2; // 16-bit PCM data
