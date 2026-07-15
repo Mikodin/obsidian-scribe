@@ -192,6 +192,8 @@ Always includes a `fileTitle` field for note renaming.
 ### Recording UX State Model
 
 - Modal, command palette, and ribbon all treat paused recordings as in-progress sessions.
+- Closing the controls modal does NOT cancel an active recording — it hands off to the persistent tappable recording notice; reopening the modal hides the notice and re-attaches to the live recording. Cancelling is always explicit (modal Reset, ribbon Cancel).
+- Per-session modal options persist in `state.sessionScribeOptions` while a recording is active; `scribe()` falls back to them when called without options (notice tap, ribbon Stop, palette toggle). Cleared on cancel/cleanup/modal-close-when-idle.
 - Recording notice/timer messages are derived from recorder-aware elapsed duration (paused time not counted).
 - `ScribePlugin` exposes helper methods used across entry points to avoid state drift:
   - `isRecordingActive()`

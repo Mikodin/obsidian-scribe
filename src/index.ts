@@ -55,6 +55,7 @@ export interface ScribeState {
   counter: number;
   audioRecord: AudioRecord | null;
   isProcessing: boolean;
+  sessionScribeOptions: ScribeOptions | null;
 }
 
 const DEFAULT_STATE: ScribeState = {
@@ -62,6 +63,7 @@ const DEFAULT_STATE: ScribeState = {
   counter: 0,
   audioRecord: null,
   isProcessing: false,
+  sessionScribeOptions: null,
 };
 
 export interface ScribeOptions {
@@ -186,27 +188,29 @@ export default class ScribePlugin extends Plugin {
 
   async cancelRecording() {
     this.hideRecordingNotice();
+    this.state.sessionScribeOptions = null;
     if (this.state.audioRecord?.mediaRecorder) {
       new Notice('Scribe: 🛑️ Recording cancelled');
       await this.state.audioRecord?.stopRecording();
     }
   }
 
-  async scribe(
-    scribeOptions: ScribeOptions = {
-      isAppendToActiveFile: this.settings.isAppendToActiveFile,
-      isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
-      isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
-      isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
-      isDisableLlmTranscription: this.settings.isDisableLlmTranscription,
-      audioFileLanguage: this.settings.audioFileLanguage,
-      scribeOutputLanguage: this.settings.scribeOutputLanguage,
-      transcriptPlatform: this.settings.transcriptPlatform,
-      processPlatform: this.settings.processPlatform,
-      llmModel: resolveLlmConfig(this.settings).model,
-      activeNoteTemplate: this.settings.activeNoteTemplate,
-    },
-  ) {
+  async scribe(scribeOptionsOverride?: ScribeOptions) {
+    const scribeOptions: ScribeOptions = scribeOptionsOverride ??
+      this.state.sessionScribeOptions ?? {
+        isAppendToActiveFile: this.settings.isAppendToActiveFile,
+        isOnlyTranscribeActive: this.settings.isOnlyTranscribeActive,
+        isMultiSpeakerEnabled: this.settings.isMultiSpeakerEnabled,
+        isSaveAudioFileActive: this.settings.isSaveAudioFileActive,
+        isDisableLlmTranscription: this.settings.isDisableLlmTranscription,
+        audioFileLanguage: this.settings.audioFileLanguage,
+        scribeOutputLanguage: this.settings.scribeOutputLanguage,
+        transcriptPlatform: this.settings.transcriptPlatform,
+        processPlatform: this.settings.processPlatform,
+        llmModel: resolveLlmConfig(this.settings).model,
+        activeNoteTemplate: this.settings.activeNoteTemplate,
+      };
+
     this.state.isProcessing = true;
     try {
       const baseFileName = formatFilenamePrefix(
@@ -602,6 +606,7 @@ export default class ScribePlugin extends Plugin {
     this.controlModal.close();
     this.state.audioRecord = null;
     this.state.isProcessing = false;
+    this.state.sessionScribeOptions = null;
   }
 
   showRecordingNotice() {

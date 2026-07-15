@@ -1,13 +1,11 @@
 import type ScribePlugin from 'src';
-import { ScribeControlsModal } from 'src/modal/scribeControlsModal';
 
 export function handleCommands(plugin: ScribePlugin) {
   plugin.addCommand({
     id: 'scribe-recording-modal',
     name: 'Open recording modal',
     callback: () => {
-      plugin.state.isOpen = true;
-      new ScribeControlsModal(plugin).open();
+      plugin.controlModal.open();
     },
   });
   plugin.addCommand({
