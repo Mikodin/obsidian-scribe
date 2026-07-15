@@ -21,6 +21,7 @@ export class ScribeControlsModal extends Modal {
 
   onOpen() {
     this.plugin.state.isOpen = true;
+    this.plugin.hideRecordingNotice();
     this.initModal();
   }
 
@@ -28,8 +29,13 @@ export class ScribeControlsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     this.plugin.state.isOpen = false;
-    void this.plugin.cancelRecording();
     this.root?.unmount();
+
+    if (this.plugin.isRecordingActive()) {
+      this.plugin.showRecordingNotice();
+    } else {
+      this.plugin.state.sessionScribeOptions = null;
+    }
   }
 
   initModal() {
@@ -58,20 +64,26 @@ const ScribeModal: React.FC<{ plugin: ScribePlugin }> = ({ plugin }) => {
   const [elapsedRecordingTimeMs, setElapsedRecordingTimeMs] = useState<number>(
     plugin.getRecordingDurationMs(),
   );
-  const [scribeOptions, setScribeOptions] = useState<ScribeOptions>({
-    isAppendToActiveFile: plugin.settings.isAppendToActiveFile,
-    isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
-    isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
-    isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
-    isDisableLlmTranscription: plugin.settings.isDisableLlmTranscription,
-    audioFileLanguage: plugin.settings.audioFileLanguage,
-    scribeOutputLanguage: plugin.settings.scribeOutputLanguage,
-    transcriptPlatform: plugin.settings.transcriptPlatform,
-    processPlatform: plugin.settings.processPlatform,
-    llmModel: resolveLlmConfig(plugin.settings).model,
-    activeNoteTemplate: plugin.settings.activeNoteTemplate,
-    additionalSystemPrompt: '',
-  });
+  const [scribeOptions, setScribeOptions] = useState<ScribeOptions>(
+    (isRecordingInProgress && plugin.state.sessionScribeOptions) || {
+      isAppendToActiveFile: plugin.settings.isAppendToActiveFile,
+      isOnlyTranscribeActive: plugin.settings.isOnlyTranscribeActive,
+      isSaveAudioFileActive: plugin.settings.isSaveAudioFileActive,
+      isMultiSpeakerEnabled: plugin.settings.isMultiSpeakerEnabled,
+      isDisableLlmTranscription: plugin.settings.isDisableLlmTranscription,
+      audioFileLanguage: plugin.settings.audioFileLanguage,
+      scribeOutputLanguage: plugin.settings.scribeOutputLanguage,
+      transcriptPlatform: plugin.settings.transcriptPlatform,
+      processPlatform: plugin.settings.processPlatform,
+      llmModel: resolveLlmConfig(plugin.settings).model,
+      activeNoteTemplate: plugin.settings.activeNoteTemplate,
+      additionalSystemPrompt: '',
+    },
+  );
+
+  useEffect(() => {
+    plugin.state.sessionScribeOptions = scribeOptions;
+  }, [scribeOptions, plugin]);
 
   useEffect(() => {
     let timer: number | null = null;
