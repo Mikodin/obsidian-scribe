@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-scribe-plugin",
-	"version": "2.4.1",
+	"version": "2.4.2",
 	"description": "An Obsidian plugin for recording voice notes, transcribing the audio, and summarizing the text - All in one",
 	"main": "build/main.js",
 	"scripts": {
@@ -25,7 +25,7 @@
 		"esbuild": "^0.28.1",
 		"obsidian": "^1.13.1",
 		"tslib": "^2.8.1",
-		"typescript": "^7.0.2"
+		"typescript": "~6.0.3"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.111.0",
