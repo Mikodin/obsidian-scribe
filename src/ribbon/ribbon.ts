@@ -22,6 +22,13 @@ function scribeDropDownMenu(plugin: ScribePlugin): Menu {
 
   if (showRecordingInProgressControls) {
     menu.addItem((item) => {
+      item.setIcon('joystick');
+      item.setTitle('Open Controls');
+      item.onClick(() => {
+        plugin.controlModal.open();
+      });
+    });
+    menu.addItem((item) => {
       item.setIcon(recordingState === 'paused' ? 'play' : 'pause');
       item.setTitle(
         recordingState === 'paused' ? 'Resume Recording' : 'Pause Recording',
@@ -49,7 +56,6 @@ function scribeDropDownMenu(plugin: ScribePlugin): Menu {
       item.setIcon('joystick');
       item.setTitle('Open Controls');
       item.onClick(() => {
-        plugin.state.isOpen = true;
         plugin.controlModal.open();
       });
     });
