@@ -19,6 +19,8 @@ export interface ProviderPrivacyInfo {
 export interface ProviderMetadata {
   displayName: string;
   apiKeySettingsField: keyof ScribePluginSettings;
+  /** used when apiKeySettingsField is blank — lets custom endpoints inherit the OpenAI key */
+  apiKeyFallbackField?: keyof ScribePluginSettings;
   keyConsoleUrl: string;
   /** undefined ⇒ the model is a free-text settings field */
   models?: readonly string[];
@@ -107,7 +109,8 @@ export const TRANSCRIPT_PROVIDERS: Record<
   },
   [TRANSCRIPT_PLATFORM.customOpenAi]: {
     displayName: 'Custom (OpenAI-compatible)',
-    apiKeySettingsField: 'openAiApiKey',
+    apiKeySettingsField: 'customTranscriptApiKey',
+    apiKeyFallbackField: 'openAiApiKey',
     keyConsoleUrl: 'https://platform.openai.com/settings',
     supportsDiarization: false,
     privacy: null,
@@ -171,11 +174,36 @@ export const LLM_PROVIDERS: Record<PROCESS_PLATFORM, ProviderMetadata> = {
   },
   [PROCESS_PLATFORM.customOpenAi]: {
     displayName: 'Custom (OpenAI-compatible)',
-    apiKeySettingsField: 'openAiApiKey',
+    apiKeySettingsField: 'customChatApiKey',
+    apiKeyFallbackField: 'openAiApiKey',
     keyConsoleUrl: 'https://platform.openai.com/settings',
     privacy: null,
   },
 };
+
+/**
+ * Reads a provider's API key, falling back to its inherited field when the
+ * provider-specific one is blank. Settings values are typed as a union, so the
+ * string guard keeps this honest for non-string entries.
+ */
+export function resolveProviderApiKey(
+  settings: ScribePluginSettings,
+  provider: ProviderMetadata,
+): string {
+  const key = settings[provider.apiKeySettingsField];
+  if (typeof key === 'string' && key) {
+    return key;
+  }
+
+  if (provider.apiKeyFallbackField) {
+    const fallback = settings[provider.apiKeyFallbackField];
+    if (typeof fallback === 'string') {
+      return fallback;
+    }
+  }
+
+  return '';
+}
 
 export interface MissingApiKey {
   provider: string;
@@ -210,7 +238,7 @@ export function getMissingApiKeys(
     }
     seenFields.add(field);
 
-    if (!settings[field]) {
+    if (!resolveProviderApiKey(settings, provider)) {
       missing.push({
         provider: provider.displayName,
         consoleUrl: provider.keyConsoleUrl,
