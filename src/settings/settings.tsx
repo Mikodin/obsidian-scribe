@@ -68,9 +68,14 @@ export interface ScribePluginSettings {
   isFrontMatterLinkToScribe: boolean;
   selectedAudioDeviceId: string;
   audioFileFormat: 'webm' | 'mp3';
-  // Custom OpenAI-compatible endpoint settings
-  customOpenAiBaseUrl: string;
+  // Custom OpenAI-compatible endpoint settings.
+  // Transcription and summarization each get their own endpoint + key so a
+  // local Whisper server and a separate chat server can be used together.
+  customTranscriptBaseUrl: string;
+  customTranscriptApiKey: string;
   customTranscriptModel: string;
+  customChatBaseUrl: string;
+  customChatApiKey: string;
   customChatModel: string;
 }
 
@@ -108,8 +113,11 @@ export const DEFAULT_SETTINGS: ScribePluginSettings = {
   selectedAudioDeviceId: '',
   audioFileFormat: 'webm',
   // Custom OpenAI-compatible endpoint settings
-  customOpenAiBaseUrl: '',
+  customTranscriptBaseUrl: '',
+  customTranscriptApiKey: '',
   customTranscriptModel: 'whisper-1',
+  customChatBaseUrl: '',
+  customChatApiKey: '',
   customChatModel: 'gpt-4o',
 };
 
@@ -152,6 +160,8 @@ export class ScribeSettingsTab extends PluginSettingTab {
           elevenLabsApiKey: this.plugin.settings.elevenLabsApiKey,
           deepgramApiKey: this.plugin.settings.deepgramApiKey,
           mistralApiKey: this.plugin.settings.mistralApiKey,
+          customTranscriptApiKey: this.plugin.settings.customTranscriptApiKey,
+          customChatApiKey: this.plugin.settings.customChatApiKey,
         };
 
         this.saveSettings();

@@ -8,6 +8,7 @@ import type { LlmSummary } from './aiProviders/prompts';
 import {
   getMissingApiKeys,
   LLM_PROVIDERS,
+  resolveProviderApiKey,
   TRANSCRIPT_PROVIDERS,
 } from './aiProviders/providerMetadata';
 import { transcribeAudio } from './aiProviders/transcription/transcriptionAdapter';
@@ -537,7 +538,7 @@ export default class ScribePlugin extends Plugin {
         return '';
       }
 
-      if (!this.settings[provider.apiKeySettingsField]) {
+      if (!resolveProviderApiKey(this.settings, provider)) {
         new Notice(
           `Scribe: ⚠️ Missing ${provider.displayName} API key — add it in settings`,
         );

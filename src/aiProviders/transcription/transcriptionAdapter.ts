@@ -1,6 +1,10 @@
 import type { ScribeOptions } from 'src';
 import type { ScribePluginSettings } from 'src/settings/settings';
 import { TRANSCRIPT_PLATFORM } from 'src/util/consts';
+import {
+  resolveProviderApiKey,
+  TRANSCRIPT_PROVIDERS,
+} from '../providerMetadata';
 import { transcribeAudioWithAssemblyAi } from './assemblyAiTranscriber';
 import { transcribeAudioWithDeepgram } from './deepgramTranscriber';
 import { transcribeAudioWithElevenLabs } from './elevenLabsTranscriber';
@@ -55,10 +59,13 @@ export async function transcribeAudio(
       );
     case TRANSCRIPT_PLATFORM.customOpenAi:
       return chunkAndTranscribeWithOpenAi(
-        settings.openAiApiKey,
+        resolveProviderApiKey(
+          settings,
+          TRANSCRIPT_PROVIDERS[TRANSCRIPT_PLATFORM.customOpenAi],
+        ),
         audioBuffer,
         scribeOptions,
-        settings.customOpenAiBaseUrl,
+        settings.customTranscriptBaseUrl,
         settings.customTranscriptModel,
       );
     default:

@@ -16,8 +16,10 @@ import {
 
 /**
  * Per-provider settings sections. API keys live inside the section for the
- * selected provider; fields shared between providers (openAiApiKey, custom
- * endpoint fields) bind to the same settings entry, so edits stay in sync.
+ * selected provider; a field shown under more than one provider (openAiApiKey)
+ * binds to the same settings entry, so edits stay in sync. The custom
+ * OpenAI-compatible endpoint is deliberately *not* shared — transcription and
+ * summarization each bind to their own URL/key so one can't overwrite the other.
  */
 
 export function TranscriptProviderSection({
@@ -59,8 +61,8 @@ export function TranscriptProviderSection({
     case TRANSCRIPT_PLATFORM.customOpenAi:
       return (
         <>
-          <OpenAiApiKeyInput />
-          <CustomBaseUrlInput />
+          <CustomTranscriptBaseUrlInput />
+          <CustomTranscriptApiKeyInput />
           <CustomTranscriptModelInput />
         </>
       );
@@ -106,8 +108,8 @@ export function LlmProviderSection({
     case PROCESS_PLATFORM.customOpenAi:
       return (
         <>
-          <OpenAiApiKeyInput />
-          <CustomBaseUrlInput />
+          <CustomChatBaseUrlInput />
+          <CustomChatApiKeyInput />
           <CustomChatModelInput />
         </>
       );
@@ -300,14 +302,50 @@ function AssemblyAiLlmModelInput() {
   );
 }
 
-function CustomBaseUrlInput() {
+function CustomTranscriptBaseUrlInput() {
   const { register } = useSettingsForm();
   return (
     <SettingsInput
-      {...register('customOpenAiBaseUrl')}
-      name="Custom base URL"
-      description="The base URL for your OpenAI-compatible API (e.g., http://localhost:1234/v1, https://your-instance.openai.azure.com/)"
+      {...register('customTranscriptBaseUrl')}
+      name="Custom transcription base URL"
+      description="The base URL of the OpenAI-compatible API used for transcription (e.g., http://localhost:1234/v1). Independent of the summarization endpoint."
       placeholder="http://localhost:1234/v1"
+    />
+  );
+}
+
+function CustomChatBaseUrlInput() {
+  const { register } = useSettingsForm();
+  return (
+    <SettingsInput
+      {...register('customChatBaseUrl')}
+      name="Custom summarization base URL"
+      description="The base URL of the OpenAI-compatible API used for summarization (e.g., http://localhost:11434/v1). Independent of the transcription endpoint."
+      placeholder="http://localhost:1234/v1"
+    />
+  );
+}
+
+function CustomTranscriptApiKeyInput() {
+  const { register } = useSettingsForm();
+  return (
+    <SettingsInput
+      {...register('customTranscriptApiKey')}
+      name="Custom transcription API key"
+      description="Key for the transcription endpoint. Leave blank to fall back to your OpenAI API key — many local servers accept any value."
+      placeholder="sk-..."
+    />
+  );
+}
+
+function CustomChatApiKeyInput() {
+  const { register } = useSettingsForm();
+  return (
+    <SettingsInput
+      {...register('customChatApiKey')}
+      name="Custom summarization API key"
+      description="Key for the summarization endpoint. Leave blank to fall back to your OpenAI API key — many local servers accept any value."
+      placeholder="sk-..."
     />
   );
 }

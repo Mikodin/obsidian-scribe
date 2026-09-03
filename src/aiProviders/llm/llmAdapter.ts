@@ -1,5 +1,6 @@
 import type { ScribePluginSettings } from 'src/settings/settings';
 import { PROCESS_PLATFORM } from 'src/util/consts';
+import { LLM_PROVIDERS, resolveProviderApiKey } from '../providerMetadata';
 import type { LlmSummary, SummaryOptions } from '../prompts';
 import { createAnthropicLlmAdapter } from './anthropicLlm';
 import {
@@ -67,9 +68,12 @@ export function resolveLlmConfig(
     case PROCESS_PLATFORM.customOpenAi:
       return {
         platform,
-        apiKey: settings.openAiApiKey,
+        apiKey: resolveProviderApiKey(
+          settings,
+          LLM_PROVIDERS[PROCESS_PLATFORM.customOpenAi],
+        ),
         model: overrides?.model ?? settings.customChatModel,
-        baseUrl: settings.customOpenAiBaseUrl,
+        baseUrl: settings.customChatBaseUrl,
       };
     default:
       return {

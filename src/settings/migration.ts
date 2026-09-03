@@ -4,6 +4,7 @@ import type { ScribePluginSettings } from './settings';
 
 interface LegacySettings extends Partial<ScribePluginSettings> {
   useCustomOpenAiBaseUrl?: boolean;
+  customOpenAiBaseUrl?: string;
 }
 
 /**
@@ -55,6 +56,19 @@ export function migrateSettings(saved: LegacySettings | null | undefined): {
     );
     migrated.activeNoteTemplate = repaired;
     didMigrate = didMigrate || didChange;
+  }
+
+  // v3 → v4: the single customOpenAiBaseUrl was shared by the transcription and
+  // summarization sections, so editing one overwrote the other. Seed both of
+  // the new per-role URLs from it to preserve the old behaviour.
+  if ('customOpenAiBaseUrl' in migrated) {
+    const legacyBaseUrl = migrated.customOpenAiBaseUrl;
+    if (legacyBaseUrl) {
+      migrated.customTranscriptBaseUrl ||= legacyBaseUrl;
+      migrated.customChatBaseUrl ||= legacyBaseUrl;
+    }
+    delete migrated.customOpenAiBaseUrl;
+    didMigrate = true;
   }
 
   return { settings: migrated, didMigrate };
